@@ -89,7 +89,8 @@ cd ../bosh-src
 bundle install
 
 # Run bats using bats dependencies, but when it shells out use CLI from current directory (bosh-src)
-BUNDLE_GEMFILE=$PWD/../bats/Gemfile bundle exec rspec ../bats/spec --tag ~multiple_manual_networks --tag ~root_partition
+BUNDLE_GEMFILE=$PWD/../bats/Gemfile bundle exec rspec -I ../bats ../bats/spec --tag ~multiple_manual_networks --tag ~root_partition
+
 
 # Clean up
 cd ../bats
