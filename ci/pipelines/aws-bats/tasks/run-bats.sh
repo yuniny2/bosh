@@ -79,18 +79,17 @@ properties:
       security_groups: [$BAT_SECURITY_GROUP_NAME]
 EOF
 
+# Install CLI from latest source
+cd bosh-src
+bundle install
+
 # Install bats dependencies
-cd bats
+cd ../bats
 ./write_gemfile
 bundle install
 
-# Install CLI from latest source
-cd ../bosh-src
-bundle install
-
-# Run bats using bats dependencies, but when it shells out use CLI from current directory (bosh-src)
-BUNDLE_GEMFILE=$PWD/../bats/Gemfile bundle exec rspec -I ../bats ../bats/spec --tag ~multiple_manual_networks --tag ~root_partition
-
+# set load path (with -I) so it picks up the bosh cli from bosh-src, and not from the gem embedded into the container
+bundle exec rspec spec -I ../bosh-src --tag ~multiple_manual_networks --tag ~root_partition
 
 # Clean up
 cd ../bats
