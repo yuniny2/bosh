@@ -21,6 +21,9 @@ blobstore:
     endpoint: http://127.0.0.1
     user: admin
     password:
+local_dns:
+  enabled: false
+  include_index: false
 snapshots:
   enabled: false
 scan_and_fix:
