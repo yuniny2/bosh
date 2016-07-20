@@ -143,7 +143,7 @@ module Bosh::Director
 
     def publish_dns_records
       if publisher_enabled?
-        Bosh::Director::Config.db.transaction(:isolation => :repeatable, :retry_on=>[Sequel::SerializationFailure]) do
+        Bosh::Director::Config.db.transaction(:isolation => :committed, :retry_on=>[Sequel::SerializationFailure]) do
           dns_records = @dns_publisher.export_dns_records
           @dns_publisher.publish(dns_records)
         end
