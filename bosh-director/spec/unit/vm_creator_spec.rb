@@ -5,7 +5,7 @@ module Bosh
   module Director
     describe VmCreator do
       subject { VmCreator.new(
-          Config.cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster
+          Config.cloud, logger, vm_deleter, disk_manager, job_renderer, agent_broadcaster, dns_manager
       ) }
 
       let(:disk_manager) { DiskManager.new(Config.cloud, logger) }
@@ -159,6 +159,7 @@ module Bosh
         allow(agent_broadcaster).to receive(:delete_arp_entries)
         allow(Config).to receive(:current_job).and_return(update_job)
         allow(Config.cloud).to receive(:delete_vm)
+        allow(dns_manager).to receive(:create_local_dns_record)
       end
 
       it 'should create a vm' do
@@ -184,7 +185,6 @@ module Bosh
         expect(deployment_plan).to receive(:ip_provider).and_return(ip_provider)
         expect(instance).to receive(:update_trusted_certs)
         expect(instance).to receive(:update_cloud_properties!)
-        expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
 
         expect {
           subject.create_for_instance_plans([instance_plan], deployment_plan.ip_provider)
@@ -386,135 +386,32 @@ module Bosh
       end
 
       context 'adding local DNS records' do
-        context 'when local_dns is enabled' do
-          context 'when include_index enabled' do
-            it 'should call create_local_dns_record to add UUID and Index based DNS record' do
-              allow(Config).to receive(:local_dns_enabled?).and_return(true)
-              allow(Config).to receive(:local_dns_include_index?).and_return(true)
-              expect(Config.cloud).to receive(:create_vm).with(
-                  kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
-              ).and_return('new-vm-cid')
-
-              expect(agent_client).to receive(:wait_until_ready)
-              expect(instance).to receive(:update_trusted_certs)
-              expect(instance).to receive(:update_cloud_properties!)
-              expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
-
-              expect {
-                subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-              }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                             Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
-                  from([0,0]).to([1,2])
-
-              instance = Models::Instance.where(vm_cid: 'new-vm-cid').first
-              local_dns_record_first =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
-              local_dns_record_second =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[1]
-
-              expect(local_dns_record_first.name).to match(Regexp.compile("#{instance.uuid}.job_name.*"))
-              expect(local_dns_record_second.name).to match(Regexp.compile("#{instance.index}.job_name.*"))
-            end
-          end
-
-          context 'when include_index disabled' do
-            before do
-              allow(Config).to receive(:local_dns_enabled?).and_return(true)
-              allow(Config).to receive(:local_dns_include_index?).and_return(false)
-            end
-
-            it 'should call create_local_dns_record to add only UUID based DNS record' do
-              expect(Config.cloud).to receive(:create_vm).with(
-                  kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
-              ).and_return('new-vm-cid')
-
-              expect(agent_client).to receive(:wait_until_ready)
-              expect(instance).to receive(:update_trusted_certs)
-              expect(instance).to receive(:update_cloud_properties!)
-              expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
-
-              expect {
-                subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-              }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                             Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
-                  from([0,0]).to([1,1])
-
-              instance = Models::Instance.where(vm_cid: 'new-vm-cid').first
-              local_dns_record_first =  Models::LocalDnsRecord.where(instance_id: instance_model.id).all[0]
-              expect(local_dns_record_first.name).to match(Regexp.compile("#{instance.uuid}.job_name.*"))
-            end
-          end
+        before do
+          allow(Config).to receive(:local_dns_enabled?).and_return(true)
         end
 
-        context 'validating instance.spec' do
-          before do
-            expect(Config.cloud).to receive(:create_vm).with(
-                kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
-            ).and_return('new-vm-cid')
-
-            expect(agent_client).to receive(:wait_until_ready)
-            expect(instance).to receive(:update_trusted_certs)
-            expect(instance).to receive(:update_cloud_properties!)
-          end
-
-          context 'when instance.spec is nil' do
-            it 'skips the instance' do
-              test_validate_spec('{}')
-            end
-          end
-
-          context 'when instance.spec is not nil' do
-            context 'when spec[networks] is nil' do
-              it 'skips the instance' do
-                test_validate_spec('{"networks": nil}')
-              end
-            end
-
-            context 'when spec[networks] is not nil' do
-              context 'when network[ip] is nil' do
-                it 'skips the instance' do
-                  test_validate_spec('{"networks":[["name",{}]],"job":{"name":"job_name"},"deployment":"bosh"}')
-                end
-              end
-            end
-
-            context 'when spec[job] is nil' do
-              it 'skips the instance' do
-                test_validate_spec('{"networks":[["name",{"ip":1234}]],"job":null,"deployment":"bosh"}')
-              end
-            end
-          end
-        end
-
-        def test_validate_spec(spec_json)
-          expect(instance_model).to receive(:spec_json).and_return(spec_json).twice
-
+        it 'should call dns_manager method to create local dns record' do
+          expect(Config.cloud).to receive(:create_vm).with(
+              kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
+          ).and_return('new-vm-cid')
+          expect(dns_manager).to receive(:create_local_dns_record)
           expect {
             subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-          }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                         Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
-              from([0, 0]).to([1, 0])
+          }.to change { Models::Instance.where(vm_cid: 'new-vm-cid').count }. from(0).to(1)
+        end
+      end
+
+      context 'when local_dns is disabled' do
+        before do
+          allow(Config).to receive(:local_dns_enabled?).and_return(false)
         end
 
-        context 'when local_dns is disabled' do
-          before do
-            allow(Config).to receive(:local_dns_enabled?).and_return(false)
-          end
-
-          it 'should call create_local_dns_record to add UUID and Index based DNS record' do
-            expect(Config.cloud).to receive(:create_vm).with(
-                kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
-            ).and_return('new-vm-cid')
-
-            expect(agent_client).to receive(:wait_until_ready)
-            expect(instance).to receive(:update_trusted_certs)
-            expect(instance).to receive(:update_cloud_properties!)
-            expect(instance_model).to receive(:spec_json).and_return('{"networks":[["name",{"ip":1234}]],"job":{"name":"job_name"},"deployment":"bosh"}').twice
-
-            expect {
-              subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
-            }.to change { [Models::Instance.where(vm_cid: 'new-vm-cid').count,
-                           Models::LocalDnsRecord.where(instance_id: instance.model.id).count] }.
-                from([0, 0]).to([1, 0])
-          end
+        it 'should call create_local_dns_record to add UUID and Index based DNS record' do
+          expect(Config.cloud).to receive(:create_vm).with(
+              kind_of(String), 'stemcell-id', {'ram' => '2gb'}, network_settings, ['fake-disk-cid'], {}
+          ).and_return('new-vm-cid')
+          expect(dns_manager).to_not receive(:create_local_dns_record)
+          subject.create_for_instance_plan(instance_plan, ['fake-disk-cid'])
         end
       end
 
