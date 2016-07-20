@@ -23,10 +23,7 @@ module Bosh::Director
 
     def export_dns_records
       hosts, version = [], nil
-      #version = Models::LocalDnsRecord.max(:id) || 0
-      #records = Models::LocalDnsRecord.all{|r| r.id <= version}
       records = Models::LocalDnsRecord.all
-      #version = records.sort(:id).last
       version = records.max_by{|r| r.id }.id
       records.each do |dns_record|
           hosts << [dns_record.ip, dns_record.name]
