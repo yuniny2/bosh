@@ -9,7 +9,7 @@ module Bosh
       ) }
 
       let(:disk_manager) { DiskManager.new(Config.cloud, logger) }
-      let(:vm_deleter) { VmDeleter.new(Config.cloud, logger, false, false) }
+      let(:vm_deleter) { VmDeleter.new(Config.cloud, logger, dns_manager, false, false) }
       let(:job_renderer) { instance_double(JobRenderer) }
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
       let(:agent_client) do

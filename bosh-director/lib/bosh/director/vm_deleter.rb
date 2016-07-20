@@ -1,8 +1,9 @@
 module Bosh::Director
   class VmDeleter
-    def initialize(cloud, logger, force=false, enable_virtual_delete_vm=false)
+    def initialize(cloud, logger, dns_manager, force=false, enable_virtual_delete_vm=false)
       @cloud = cloud
       @logger = logger
+      @dns_manager = dns_manager
       @error_ignorer = ErrorIgnorer.new(force, @logger)
       @enable_virtual_delete_vm = enable_virtual_delete_vm
     end
@@ -14,7 +15,7 @@ module Bosh::Director
           instance_name = "#{instance.job}/#{instance.uuid}"
           parent_id = add_event(instance.deployment.name, instance_name, vm_cid) if store_event
           delete_vm(instance.vm_cid)
-          delete_local_dns_record(instance)
+          @dns_manager.delete_local_dns_record(instance.model) if Config.local_dns_enabled?
           instance.update(vm_cid: nil, agent_id: nil, trusted_certs_sha1: nil, credentials: nil)
         rescue Exception => e
           raise e
@@ -47,33 +48,6 @@ module Bosh::Director
               error:       error
           })
       event.id
-    end
-
-    def delete_local_dns_record(instance_model)
-      spec = instance_model.spec
-      @logger.debug('Deleting local dns records')
-
-      unless spec.nil? || spec['networks'].nil?
-        @logger.debug("Found #{spec['networks'].length} networks")
-        spec['networks'].each do |network_name, network|
-
-          unless network['ip'].nil? or spec['job'].nil?
-            ip = network['ip']
-            name_rest = '.' + spec['job']['name'] + '.' + network_name + '.' + spec['deployment'] + '.' + Config.canonized_dns_domain_name
-            name_uuid = instance_model.uuid + name_rest
-            name_index = instance_model.index.to_s + name_rest
-            Bosh::Director::Config.db.transaction(:isolation => :repeatable, :retry_on=>[Sequel::SerializationFailure]) do
-              @logger.debug("Removing local dns record with UUID name #{name_uuid} and ip #{ip}")
-              Models::LocalDnsRecord.where(:name => name_uuid, :ip => ip, :instance_id => instance_model.id ).delete
-
-              @logger.debug("Removing local dns record with index name #{name_index} and ip #{ip}")
-              Models::LocalDnsRecord.where(:name => name_index, :ip => ip, :instance_id => instance_model.id ).delete
-            end
-          end
-
-        end
-      end
-
     end
   end
 end
