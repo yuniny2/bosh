@@ -84,7 +84,7 @@ user_management:
   provider: <%= user_authentication %>
   <% if user_authentication == 'uaa' %>
   uaa:
-    symmetric_key: uaa-secret-key
+    # symmetric_key: uaa-secret-key
     # matches public key in asymmetric/uaa.yml
     public_key: |
       -----BEGIN PUBLIC KEY-----
@@ -128,6 +128,12 @@ config_server:
     jN+3WBwg0RucmyXbMrStizDrwWPccw==
     -----END CERTIFICATE-----
   ca_cert_path: <%= config_server_cert_path %>
+
+  uaa_url: <%= config_server_uaa_url %>
+  uaa_client_id: <%= config_server_uaa_client_id %>
+  uaa_client_secret: <%= config_server_uaa_client_secret %>
+  uaa_ca_cert_path: <%= config_server_uaa_ca_cert_path %>
+
 <% else %>
 config_server:
   enabled: false

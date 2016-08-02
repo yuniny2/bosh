@@ -38,6 +38,10 @@ config_server = {
 if config_server['enabled']
  config_server['url'] = p('director.config_server.url')
  config_server['ca_cert_path'] = '/var/vcap/jobs/director/config/config_server_ca.cert'
+ config_server['uaa_url'] = p('director.config_server.uaa.url')
+ config_server['uaa_client_id'] = p('director.config_server.uaa.client_id')
+ config_server['uaa_client_secret'] = p('director.config_server.uaa.client_secret')
+ config_server['uaa_ca_cert_path'] = '/var/vcap/jobs/director/config/uaa_server_ca.cert'
 end
 params['config_server'] = config_server
 
