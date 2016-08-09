@@ -255,8 +255,8 @@ module Bosh::Director
         nil
       end
 
-      def persistent_disk_type
-        nil
+      def persistent_disk_collection
+        PersistentDiskCollection.new(multiple_disks: false)
       end
 
       def compilation?

@@ -80,6 +80,7 @@ module Bosh
         job.templates << template
         job.default_network = {"gateway" => "name"}
         job.update = BD::DeploymentPlan::UpdateConfig.new({'canaries' => 1, 'max_in_flight' => 1, 'canary_watch_time' => '1000-2000', 'update_watch_time' => '1000-2000'})
+        job.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new
         job
       end
 

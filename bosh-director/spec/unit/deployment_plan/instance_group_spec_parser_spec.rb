@@ -735,13 +735,13 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
     end
 
     describe 'persistent_disk key' do
-      it 'parses persistent disk if present' do
+      xit 'parses persistent disk if present' do
         job_spec['persistent_disk'] = 300
         job = parsed_job
         expect(job.persistent_disk_type.disk_size).to eq(300)
       end
 
-      it 'allows persistent disk to be nil' do
+      xit 'allows persistent disk to be nil' do
         job_spec.delete('persistent_disk')
         job = parsed_job
         expect(job.persistent_disk_type).to eq(nil)
@@ -759,7 +759,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
     end
 
     describe 'persistent_disk_type key' do
-      it 'parses persistent_disk_type' do
+      xit 'parses persistent_disk_type' do
         job_spec['persistent_disk_type'] = 'fake-disk-pool-name'
         expect(deployment_plan).to receive(:disk_type)
           .with('fake-disk-pool-name')
@@ -785,7 +785,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
     end
 
     describe 'persistent_disk_pool key' do
-      it 'parses persistent_disk_pool' do
+      xit 'parses persistent_disk_pool' do
         job_spec['persistent_disk_pool'] = 'fake-disk-pool-name'
         expect(deployment_plan).to receive(:disk_type)
                                      .with('fake-disk-pool-name')
@@ -810,6 +810,45 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
       end
     end
 
+    describe 'persistent_disks' do
+      let(:disk_type_small) { instance_double(Bosh::Director::DeploymentPlan::DiskType) }
+      let(:disk_type_large) { instance_double(Bosh::Director::DeploymentPlan::DiskType) }
+
+      it 'complains about empty names' do
+        job_spec['persistent_disks'] = [{'name' => '', 'type' => 'disk-type-small'}]
+        expect {
+          parsed_job
+        }.to raise_error Bosh::Director::InstanceGroupInvalidPersistentDisk,
+          "Instance group 'fake-job-name' persistent_disks's section contains a disk with no name"
+      end
+
+      it 'complains about two disks with the same name' do
+        job_spec['persistent_disks'] = [
+          {'name' => 'same', 'type' => 'disk-type-small'},
+          {'name' => 'same', 'type' => 'disk-type-small'}
+        ]
+
+        expect {
+          parsed_job
+        }.to raise_error Bosh::Director::InstanceGroupInvalidPersistentDisk,
+          "Instance group 'fake-job-name' persistent_disks's section contains duplicate names"
+      end
+
+      it 'complains about unknown disk type' do
+        job_spec['persistent_disks'] = [{'name' => 'disk-name-0', 'type' => 'disk-type-small'}]
+        expect(deployment_plan).to receive(:disk_type)
+                                   .with('disk-type-small')
+                                   .and_return(nil)
+
+        expect {
+          parsed_job
+        }.to raise_error(
+          Bosh::Director::InstanceGroupUnknownDiskType,
+          "Instance group 'fake-job-name' persistent_disks's section references an unknown disk type 'disk-type-small'"
+        )
+      end
+    end
+
     context 'when job has multiple persistent_disks keys' do
       it 'raises an error if persistent_disk and persistent_disk_pool are both present' do
         job_spec['persistent_disk'] = 300
@@ -819,9 +858,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           parsed_job
         }.to raise_error(
             Bosh::Director::InstanceGroupInvalidPersistentDisk,
-            "Instance group 'fake-job-name' references both a persistent disk size '300' and a persistent disk pool 'fake-disk-pool-name'"
+            "Instance group 'fake-job-name' specifies more than one of the following keys: 'persistent_disk', 'persistent_disk_type', 'persistent_disk_pool' and 'persistent_disks'. Choose one."
           )
       end
+
       it 'raises an error if persistent_disk and persistent_disk_type are both present' do
         job_spec['persistent_disk'] = 300
         job_spec['persistent_disk_type'] = 'fake-disk-pool-name'
@@ -830,9 +870,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           parsed_job
         }.to raise_error(
             Bosh::Director::InstanceGroupInvalidPersistentDisk,
-            "Instance group 'fake-job-name' references both a persistent disk size '300' and a persistent disk type 'fake-disk-pool-name'"
+          "Instance group 'fake-job-name' specifies more than one of the following keys: 'persistent_disk', 'persistent_disk_type', 'persistent_disk_pool' and 'persistent_disks'. Choose one."
           )
       end
+
       it 'raises an error if persistent_disk_type and persistent_disk_pool are both present' do
         job_spec['persistent_disk_type'] = 'fake-disk-pool-name'
         job_spec['persistent_disk_pool'] = 'fake-disk-pool-name'
@@ -841,8 +882,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroupSpecParser do
           parsed_job
         }.to raise_error(
             Bosh::Director::InstanceGroupInvalidPersistentDisk,
-            "Instance group 'fake-job-name' specifies both 'disk_types' and 'disk_pools', only one key is allowed. " +
-              "'disk_pools' key will be DEPRECATED in the future."
+            "Instance group 'fake-job-name' specifies more than one of the following keys: 'persistent_disk', 'persistent_disk_type', 'persistent_disk_pool' and 'persistent_disks'. Choose one."
           )
       end
     end

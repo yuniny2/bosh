@@ -32,7 +32,7 @@ module Bosh::Director
         stemcell: make_stemcell({:name => 'fake-stemcell-name', :version => '1.0'}),
         env: DeploymentPlan::Env.new({'key' => 'value'}),
         package_spec: {},
-        persistent_disk_type: nil,
+        persistent_disk_collection: DeploymentPlan::PersistentDiskCollection.new,
         is_errand?: false,
         link_spec: {},
         compilation?: false,
@@ -153,7 +153,7 @@ module Bosh::Director
             expect { state_applier.apply(update_config) }.to raise_error
           end
         end
-        
+
         context 'when the interval length is longer than 150 seconds' do
           let(:update_watch_time) { '1000-301000' }
 
