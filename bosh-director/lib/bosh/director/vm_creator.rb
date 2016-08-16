@@ -131,6 +131,13 @@ module Bosh::Director
         options[:credentials] = credentials
       end
 
+      if Config.remove_dev_tools
+        env['bosh'] ||= {}
+        unless env['bosh'].has_key?('remove_dev_tools')
+          env['bosh']['remove_dev_tools'] = Config.remove_dev_tools
+        end
+      end
+
       password = env.fetch('bosh', {}).fetch('password', "")
       if Config.generate_vm_passwords && password == ""
         env['bosh'] ||= {}

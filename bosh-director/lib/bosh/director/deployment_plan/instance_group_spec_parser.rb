@@ -420,12 +420,12 @@ module Bosh::Director
       end
 
       def check_remove_dev_tools
-        if Config.remove_dev_tools
-          @instance_group.env.spec['bosh'] ||= {}
-          unless @instance_group.env.spec['bosh'].has_key?('remove_dev_tools')
-            @instance_group.env.spec['bosh']['remove_dev_tools'] = Config.remove_dev_tools
-          end
-        end
+        # if Config.remove_dev_tools
+        #   @instance_group.env.spec['bosh'] ||= {}
+        #   unless @instance_group.env.spec['bosh'].has_key?('remove_dev_tools')
+        #     @instance_group.env.spec['bosh']['remove_dev_tools'] = Config.remove_dev_tools
+        #   end
+        # end
       end
     end
   end
