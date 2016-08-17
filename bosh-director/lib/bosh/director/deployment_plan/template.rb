@@ -191,10 +191,6 @@ module Bosh::Director
         @template_scoped_properties[deployment_instance_group_name] = template_scoped_properties
       end
 
-      def has_template_scoped_properties(deployment_instance_group_name)
-        return !@template_scoped_properties[deployment_instance_group_name].nil?
-      end
-
       def bind_template_scoped_properties(deployment_instance_group_name)
         bound_template_scoped_properties = {}
         properties.each_pair do |name, definition|
@@ -202,7 +198,7 @@ module Bosh::Director
               bound_template_scoped_properties,
               @template_scoped_properties[deployment_instance_group_name],
               name,
-              definition["default"]
+              definition['default']
           )
         end
         @template_scoped_properties[deployment_instance_group_name] = bound_template_scoped_properties
