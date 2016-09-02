@@ -22,10 +22,10 @@ module Bosh::Director
         let(:force) { false }
 
         before do
-          allow(blobstore).to receive(:delete).with('package-blob-id-1')
-          allow(blobstore).to receive(:delete).with('package-blob-id-2')
-          allow(blobstore).to receive(:delete).with('template-blob-id-1')
-          allow(blobstore).to receive(:delete).with('template-blob-id-2')
+          allow(package_deleter).to receive(:delete).with(package_1, force)
+          allow(package_deleter).to receive(:delete).with(package_2, force)
+          allow(template_deleter).to receive(:delete).with(template_1, force)
+          allow(template_deleter).to receive(:delete).with(template_2, force)
         end
 
         let(:errors) { release_deleter.delete(release, force) }

@@ -24,9 +24,11 @@ module Bosh::Director::Jobs
         if delete_successful
           package.remove_all_release_versions
           package.destroy
-        end
 
-        errors
+          return errors
+        else
+          raise errors.first
+        end
       end
     end
   end

@@ -65,13 +65,23 @@ module Bosh::Director
               allow(blobstore).to receive(:delete).with('compiled_package_blobstore_id').and_raise('negative')
             end
 
-            it "should raise" do
-              # we don't beleive this is desirable behavior, but this was the previous behavior.
+            it 'should raise' do
+              # we don't believe this is desirable behavior, but this was the previous behavior.
               # if the compiled package is not deleted successfully, the package will fail to destroy.
               # if we destroy the compiled package despite failing to delete it's blob, we lose the
               # ability to delete the blob in the future.
-              # if we fail to destroy the compiled_pacakge, then destroy the package, we risk
+              # if we fail to destroy the compiled_package, then destroy the package, we risk
               # orphaning the compiled package.
+              expect { package_deleter.delete(package, force) }.to raise_error()
+            end
+          end
+
+          context 'when failing to delete the package blob' do
+            before do
+              allow(blobstore).to receive(:delete).with('package_blobstore_id').and_raise('negative')
+            end
+
+            it 'should raise' do
               expect { package_deleter.delete(package, force) }.to raise_error()
             end
           end

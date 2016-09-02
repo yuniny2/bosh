@@ -15,7 +15,10 @@ module Bosh::Director::Jobs
         errors = []
         if @blob_deleter.delete(compiled_package.blobstore_id, errors,  options['force'])
           compiled_package.destroy
+        else
+          raise errors.first
         end
+
         errors
       end
     end

@@ -24,13 +24,12 @@ module Bosh::Director
           allow(blobstore).to receive(:delete).and_raise("Failed to delete")
         end
 
-        it 'returns an error AND does not delete the compiled package from the database' do
+        it 'raises an error AND does not delete the compiled package from the database' do
           compiled_package = Models::CompiledPackage.make(
             package: Models::Package.make(name: 'package-name', version: 'version'),
             blobstore_id: 'compiled-package-blb-1', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
-          errors = package_deleter.delete(compiled_package)
-          expect(errors.count).to eq(1)
+          expect{ package_deleter.delete(compiled_package) }.to raise_error()
           expect(Models::CompiledPackage[compiled_package.id]).not_to be_nil
         end
 
