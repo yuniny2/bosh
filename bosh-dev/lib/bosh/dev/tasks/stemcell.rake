@@ -71,6 +71,7 @@ namespace :stemcell do
       public: true,
     )
     puts "OS image #{args.os_image_path} version '#{file.version}' uploaded to S3 in bucket '#{args.s3_bucket_name}' with key '#{args.s3_bucket_key}'."
+    puts "OS image file version uploaded to S3 is:#{file.version}"
   end
 
   desc 'Build a stemcell with a remote pre-built base OS image'
