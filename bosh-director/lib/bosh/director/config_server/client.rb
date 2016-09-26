@@ -4,8 +4,9 @@ module Bosh::Director::ConfigServer
   class EnabledClient
     include ConfigServerHelper
 
-    def initialize(http_client, logger)
+    def initialize(http_client, director_name, logger)
       @config_server_http_client = http_client
+      @director_name = director_name
       @deep_hash_replacer = DeepHashReplacement.new
       @logger = logger
     end
@@ -16,16 +17,15 @@ module Bosh::Director::ConfigServer
     def interpolate(src, subtrees_to_ignore = [])
       result = Bosh::Common::DeepCopy.copy(src)
 
-      config_map = @deep_hash_replacer.replacement_map(src, subtrees_to_ignore)
+      placeholders_paths = @deep_hash_replacer.placeholders_paths(src, subtrees_to_ignore)
+      placeholders_list = placeholders_paths.map { |c| c['placeholder'] }.uniq
 
-      config_keys = config_map.map { |c| c['key'] }.uniq
-
-      config_values, invalid_keys = fetch_config_values(config_keys)
-      if invalid_keys.length > 0
-        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find keys in the config server: #{invalid_keys.join(", ")}"
+      retrieved_config_server_values, missing_keys = fetch_keys_values(placeholders_list)
+      if missing_keys.length > 0
+        raise Bosh::Director::ConfigServerMissingKeys, "Failed to find keys in the config server: #{missing_keys.join(', ')}"
       end
 
-      replace_config_values!(config_map, config_values, result)
+      replace_config_values!(placeholders_paths, retrieved_config_server_values, result)
       result
     end
 
@@ -117,33 +117,20 @@ module Bosh::Director::ConfigServer
       end
     end
 
-    def fetch_config_values(keys)
-      invalid_keys = []
+    def fetch_keys_values(placeholders)
+      missing_keys = []
       config_values = {}
 
-      keys.each do |k|
+      placeholders.each do |placeholder|
+        key = extract_placeholder_key(placeholder)
         begin
-          config_values[k] = get_value_for_key(k)
+          config_values[placeholder] = get_value_for_key(key)
         rescue Bosh::Director::ConfigServerMissingKeys
-          invalid_keys << k
+          missing_keys << key
         end
       end
 
-      [config_values, invalid_keys]
-    end
-
-    def replace_config_values!(config_map, config_values, obj_to_be_resolved)
-      config_map.each do |config_loc|
-        config_path = config_loc['path']
-        ret = obj_to_be_resolved
-
-        if config_path.length > 1
-          ret = config_path[0..config_path.length-2].inject(obj_to_be_resolved) do |obj, el|
-            obj[el]
-          end
-        end
-        ret[config_path.last] = config_values[config_loc['key']]
-      end
+      [config_values, missing_keys]
     end
 
     def generate_password(key)

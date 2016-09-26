@@ -447,6 +447,8 @@ describe 'using director with config server', type: :integration do
           expect(output).to include('Error 540000: Failed to find keys in the config server: release_name')
         end
 
+        # please do not delete me: add test to cover generation of passwords and certs in runtime manifest
+
         context 'when property cannot be found at render time' do
           let(:runtime_config) do
             {

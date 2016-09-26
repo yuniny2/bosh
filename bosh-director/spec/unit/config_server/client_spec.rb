@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::ConfigServer
   describe EnabledClient do
-    subject(:client) { EnabledClient.new(http_client, logger) }
+    subject(:client) { EnabledClient.new(http_client, 'director_name', logger) }
     let(:logger) { double('Logging::Logger') }
 
     before do
@@ -56,7 +56,7 @@ module Bosh::Director::ConfigServer
       end
 
       it 'replaces all placeholders it finds in the hash passed' do
-        expected_result =         {
+        expected_result = {
           'name' => 'test4',
           'properties' => {
             'key' => 123
