@@ -126,10 +126,10 @@ module Bosh::Director
         @compiled_package_cache = nil
 
         @db_config = config['db']
-        @db = configure_db(config['db'])
+        @db = configure_db(config['db']) unless @db
         @dns = config['dns']
         if @dns && @dns['db']
-          @dns_db = configure_db(@dns['db'])
+          @dns_db = configure_db(@dns['db']) unless @dns_db
           if @dns_db
             # Load these constants early.
             # These constants are not 'require'd, they are 'autoload'ed
@@ -222,7 +222,11 @@ module Bosh::Director
 
         Sequel.default_timezone = :utc
         db = Sequel.connect(connection_config)
+        db.extension :bosh_schema_caching
+        db.load_schema('schema.dump')
 
+        puts 'config db'
+        puts db
         Bosh::Common.retryable(sleep: 0.5, tries: 20, on: [Exception]) do
           db.extension :connection_validator
           true

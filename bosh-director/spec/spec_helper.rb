@@ -113,6 +113,7 @@ module SpecHelper
 
       Sequel.default_timezone = :utc
       @director_db = Sequel.connect(@director_db_helper.connection_string, db_opts)
+      @director_db.extension :bosh_schema_caching
       @director_db.loggers << (logger || @init_logger)
       Bosh::Director::Config.db = @director_db
 
@@ -189,7 +190,9 @@ BD = Bosh::Director
 
 RSpec.configure do |rspec|
   rspec.around(:each) do |example|
+    puts "=========="
     SpecHelper.reset_database(example)
+    puts "=========="
   end
 
   rspec.before(:each) do

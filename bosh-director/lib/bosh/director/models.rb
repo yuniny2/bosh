@@ -35,4 +35,3 @@ module Bosh::Director
     autoload :Dns, 'bosh/director/models/dns'
   end
 end
-

@@ -334,6 +334,15 @@ module Bosh::Director
       end
 
       post '/', authorization: :create_deployment, :consumes => :yaml do
+        puts "========== start"
+        # Bosh::Director::Config.raw_db.load_schema_cache?('/tmp/foo.txt')
+
+        # require 'bosh/director/models/event'
+
+        Bosh::Director::Config.db.dump_schema_cache('/tmp/foo.txt')
+
+        puts "========== end"
+
         deployment = validate_manifest_yml(request.body.read, nil)
         unless deployment.kind_of?(Hash)
           raise ValidationInvalidType, 'Deployment manifest must be a hash'
