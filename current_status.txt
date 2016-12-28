@@ -1,0 +1,30 @@
+We were using a director that can be controlled from ~/workspace/bosh-deployment/robinson
+(there is a .envrc file there that should connect you with all the params)
+
+A stemcell with a sha256 agent was uploaded and deployed to that director.
+The vagrant machine that was used to create that director is running on robinson.
+There is one vm deployed with that stemcell.  The instance is
+
+   `jmeter_workers/ae8714c7-a410-46ef-bb15-ab1d7773783c`
+
+
+On that instance there is a directory where we've been deploying the one-off sha256 stemcell with gobosh and bosh-init
+
+   `/var/vcap/data/create-env`
+
+
+To complete this story, there are several things that should happen:
+
+  - bosh integration tests should run ( the far left tab on terminal on robinson should have results from a fly run)
+      There were changes made to `drain.erb` that need to be committed and pushed. The changes are in ~/workspace/bosh
+
+    check that both gocli and ruby cli tests will pass
+
+  - gobosh create-env with the new stemcell. This is done and confirmed.
+
+  - bosh-init deploy with the new stemcell. This is done and confirmed.
+
+
+When these things are done and pass, the agent should be bumped and pushed
+
+
