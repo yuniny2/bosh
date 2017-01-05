@@ -101,6 +101,13 @@ describe 'director.yml.erb.erb' do
       end
     end
 
+    context 'when using the verify-multidigest binary' do
+
+      it 'should configure the paths' do
+        expect(parsed_yaml['blobstore']['verify-multidigest']['path']).to eq('/var/vcap/packages/verify-multidigest/bin/verify-multidigest')
+      end
+    end
+
     it 'should contain the trusted_certs field' do
       expect(parsed_yaml['trusted_certs']).to eq("test_trusted_certs\nvalue")
     end

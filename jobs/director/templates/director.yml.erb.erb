@@ -167,7 +167,8 @@ end
 
 params['blobstore'] = {
   'provider' => p('blobstore.provider'),
-  'options' => blobstore_options
+  'options' => blobstore_options,
+  'verify-multidigest' => { 'path' => '/var/vcap/packages/verify-multidigest/bin/verify-multidigest'}
 }
 
 if p('blobstore.provider') == "s3"

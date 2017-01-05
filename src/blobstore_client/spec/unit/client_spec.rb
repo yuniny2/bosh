@@ -59,8 +59,12 @@ module Bosh::Blobstore
 
     describe '.safe_create' do
       context 'with known provider' do
+        let(:options) do
+          { 'verify-multidigest' => {'path' => '/some/path'}}
+        end
+
         it 'returns retryable client' do
-          client = described_class.safe_create('simple', {})
+          client = described_class.safe_create('simple', options)
           expect(client).to be_an_instance_of(RetryableBlobstoreClient)
         end
 
@@ -73,7 +77,7 @@ module Bosh::Blobstore
           sha1_verifiable_client = instance_double('Bosh::Blobstore::Sha1VerifiableBlobstoreClient')
           expect(Sha1VerifiableBlobstoreClient)
             .to receive(:new)
-            .with(wrapped_client)
+            .with(wrapped_client, options['verify-multidigest']['path'])
             .and_return(sha1_verifiable_client)
 
           retryable = instance_double('Bosh::Retryable')
@@ -87,11 +91,11 @@ module Bosh::Blobstore
             .with(sha1_verifiable_client, retryable)
             .and_return(retryable_client)
 
-          expect(described_class.safe_create('simple', {})).to eq(retryable_client)
+          expect(described_class.safe_create('simple', options)).to eq(retryable_client)
         end
 
         it 'makes retryable client with simple client' do
-          options = { 'fake-key' => 'fake-value' }
+          options.merge!({ 'fake-key' => 'fake-value' })
           expect(SimpleBlobstoreClient).to receive(:new).with(options).and_call_original
           described_class.safe_create('simple', options)
         end
@@ -101,7 +105,7 @@ module Bosh::Blobstore
             .to receive(:new)
             .with(tries: 6, sleep: 2.0, on: [BlobstoreError])
             .and_call_original
-          described_class.safe_create('simple', {})
+          described_class.safe_create('simple', options)
         end
       end
 
@@ -110,6 +114,14 @@ module Bosh::Blobstore
           expect {
             described_class.safe_create('fake-unknown-provider', {})
           }.to raise_error(/^Unknown client provider 'fake-unknown-provider'/)
+        end
+      end
+
+      context 'when multidigest binary path is not provided' do
+        it 'raises an exception' do
+          expect {
+            described_class.safe_create('simple', {})
+          }.to raise_error(/^Multiple Digest binary not provided/)
         end
       end
     end
