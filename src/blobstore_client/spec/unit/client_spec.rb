@@ -50,7 +50,7 @@ module Bosh::Blobstore
     describe '.safe_create' do
       context 'with known provider' do
         let(:options) do
-          { 'verify-multidigest' => {'path' => '/some/path'}}
+          {'verify_multidigest_path' => '/some/path'}
         end
 
         it 'returns retryable client' do
@@ -67,7 +67,7 @@ module Bosh::Blobstore
           sha1_verifiable_client = instance_double('Bosh::Blobstore::Sha1VerifiableBlobstoreClient')
           expect(Sha1VerifiableBlobstoreClient)
             .to receive(:new)
-            .with(wrapped_client, options['verify-multidigest']['path'])
+            .with(wrapped_client, options['verify_multidigest_path'])
             .and_return(sha1_verifiable_client)
 
           retryable = instance_double('Bosh::Retryable')
