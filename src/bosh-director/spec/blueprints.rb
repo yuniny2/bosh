@@ -204,6 +204,13 @@ module Bosh::Director::Models
     name      { Sham.name }
   end
 
+  Errand.blueprint do
+    fingerprint       {  Sham.sha1  }
+    links_json        { "{}" }
+    properties_json   { "{}" }
+    ran_successfully  { false }
+  end
+
   LocalDnsBlob.blueprint do
     blobstore_id { Sham.blobstore_id }
     sha1         { Sham.sha1 }

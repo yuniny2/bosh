@@ -135,6 +135,53 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     end
   end
 
+  context 'when the fcreated flag is specified' do
+    with_reset_sandbox_before_each
+
+    let(:properties_hash) { { 'foo' => 'bar' } }
+    let(:manifest_hash) do
+      Bosh::Spec::Deployments.test_release_manifest.merge({
+        'jobs' => [{
+          'name' => 'fake-errand-name',
+          'template' => 'errand_without_package',
+          'resource_pool' => 'fake-resource-pool',
+          'instances' => 1,
+          'lifecycle' => 'errand',
+          'networks' => [{'name' => 'fake-network'}],
+          'properties' => properties_hash
+        }]
+      })
+    end
+
+    before do
+        deploy_from_scratch(manifest_hash: manifest_hash)
+        bosh_runner.run('run-errand fake-errand-name', return_exit_code: true, deployment_name: deployment_name)
+    end
+
+    context 'when the errand configuration has not changed' do
+      it 'does not re-run the errand' do
+
+        output, exit_code = bosh_runner.run('run-errand fake-errand-name', fchanged: true, return_exit_code: true, deployment_name: deployment_name)
+        expect(exit_code).to eq(0)
+        expect(output).to eq('asdfssdfasdf') #output should indicate that errand doesn't run
+        expect(current_sandbox.cpi.invocations_for_method('create_vm')).to eq(4)
+      end
+    end
+
+    context 'when the errand configuration has changed' do
+      let(:properties_hash) { { 'foo' => 'potato' } }
+
+      it 'reruns the errand' do
+        deploy_from_scratch(manifest_hash: manifest_hash)
+
+        output, exit_code = bosh_runner.run('run-errand fake-errand-name', fchanged: true, return_exit_code: true, deployment_name: deployment_name)
+        expect(exit_code).to eq(0)
+        expect(output).to match('asdfssdfasdf') #output should indicate errand runs
+        expect(current_sandbox.cpi.invocations_for_method('create_vm')).to eq(5)
+      end
+    end
+  end
+
   describe 'network update is required for the job vm' do
     with_reset_sandbox_before_each
 

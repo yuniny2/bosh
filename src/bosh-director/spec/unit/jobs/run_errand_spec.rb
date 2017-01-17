@@ -241,6 +241,51 @@ module Bosh::Director
                   expect(subject.perform).to eq('fake-result-short-description')
                 end
               end
+
+              context 'when errand is run with fchanged' do
+                let(:fchanged) { true }
+
+                let(:errand_success) { true }
+                let!(:errand_model) do
+                  Models::Errand.make(
+                    fingerprint: 'fingerprint',
+                    links_json: '{ "scorpion": "scorpion" }',
+                    properties_json: '{ "some": "value"}',
+                    ran_successfully: errand_success
+                  )
+                end
+
+                context 'when the errand configuration has not changed' do
+                  context 'when the errand succeeded' do
+                    it 'does not run the errand' do
+                      expect(job_manager).to_not receive(:create_missing_vms)
+                      expect(runner).to_not receive(:run)
+
+                      expect(subject.perform).to eq('fake-result-short-description')
+                    end
+                  end
+
+                  context 'when the errand failed' do
+                    let(:errand_success) { false }
+
+                    it 'runs the errand' do
+                      expect(job_manager).to receive(:create_missing_vms)
+                      expect(runner).to receive(:run)
+
+                      expect(subject.perform).to eq('fake-result-short-description')
+                    end
+                  end
+                end
+
+                context 'when the errand configuration has changed' do
+                  it 'runs the errand' do
+                    expect(job_manager).to receive(:create_missing_vms)
+                    expect(runner).to receive(:run)
+
+                    expect(subject.perform).to eq('fake-result-short-description')
+                  end
+                end
+              end
             end
 
             context 'when job representing an errand has 0 instances' do
