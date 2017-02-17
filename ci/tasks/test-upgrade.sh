@@ -40,6 +40,9 @@ case "$DB" in
     exit 1
 esac
 
+mv ./bosh-cli/*bosh-cli-*-linux-amd64 /usr/local/bin/gobosh
+chmod +x /usr/local/bin/gobosh
+
 source /etc/profile.d/chruby.sh
 chruby $RUBY_VERSION
 
@@ -48,7 +51,5 @@ cd bosh-src/src
 print_git_state
 
 bundle install --local
-
-export BOSH_CLI_SILENCE_SLOW_LOAD_WARNING=true
 
 bundle exec rake --trace spec:upgrade

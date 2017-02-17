@@ -8,11 +8,12 @@ image_resource:
 
 inputs:
 - name: bosh-src
+- name: bosh-cli
 
 run:
   path: bosh-src/ci/tasks/test-upgrade.sh
 
 params:
-  RUBY_VERSION: replace-me
-  DB:           replace-me
-  LOG_LEVEL:    ERROR
+  RUBY_VERSION:      replace-me
+  DB:                replace-me
+  LOG_LEVEL:         ERROR
