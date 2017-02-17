@@ -1,0 +1,51 @@
+---
+
+jobs:
+  - name: upgrade-tests
+    public: true
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+      - aggregate:
+        - get: bosh-src
+          trigger: true
+        - get: bosh-cli
+          trigger: true
+      - aggregate:
+        - task: upgrade-with-postgres
+          privileged: true
+          file: bosh-src/ci/tasks/test-upgrade.yml
+          tags: ["bosh-integration"]
+          params:
+            DB: postgresql
+            RUBY_VERSION: 2.3.1
+
+        - task: upgrade-with-mysql
+          privileged: true
+          file: bosh-src/ci/tasks/test-upgrade.yml
+          tags: ["bosh-integration"]
+          params:
+            DB: mysql
+            RUBY_VERSION: 2.3.1
+
+        # on_failure:
+        #   put: slack-alert
+        #   params:
+        #     channel: {{slack_channel_name}}
+        #     icon_url: http://cl.ly/image/3e1h0H3H2s0P/concourse-logo.png
+        #     text: {{slack_failure_message}}
+
+resources:
+  - name: bosh-src
+    type: git
+    source:
+      uri: {{bosh_src_url}}
+      branch: develop
+      private_key: {{github_deployment_key}}
+
+  - name: bosh-cli
+    type: s3
+    source:
+      regexp: alpha-bosh-cli-(.*)-linux-amd64
+      bucket: {{bosh_cli_aws_s3_alpha_release_bucket}}
+      region_name: {{bosh_cli_aws_s3_release_bucket_region}}
