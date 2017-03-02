@@ -25,7 +25,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       director.wait_for_first_available_instance(60, deployment_name: deployment_name)
 
       output = JSON.parse(bosh_runner.run_until_succeeds('locks --json'))
-      expect(output['Tables'][0]['Rows']).to include(['deployment', 'errand', anything])
+      expect(output['Tables'][0]['Rows']).to include(['type' => 'deployment', 'resource' => 'errand', 'expires_at' => anything])
 
       errand_instance = director.instances(deployment_name: deployment_name).find { |instance| instance.job_name == 'fake-errand-name' && instance.index == '0' }
       expect(errand_instance).to_not be_nil
@@ -305,9 +305,9 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
       output = scrub_random_ids(table(@output))
 
-      expect(output[0]['Stdout']).to match('fake-errand-stdout')
-      expect(output[0]['Stderr']).to match('fake-errand-stderr')
-      expect(output[0]['Exit Code']).to match('0')
+      expect(output[0]['stdout']).to match('fake-errand-stdout')
+      expect(output[0]['stderr']).to match('fake-errand-stderr')
+      expect(output[0]['exit_code']).to match('0')
 
       expect(@exit_code).to eq(0)
     end
