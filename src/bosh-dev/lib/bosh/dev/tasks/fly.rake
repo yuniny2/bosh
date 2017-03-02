@@ -5,8 +5,12 @@ namespace :fly do
   # bundle exec rake fly:unit
   desc 'Fly unit specs'
   task :unit do
+    db = ENV['DB'] || 'postgresql'
+    db_version = ENV['DB_VERSION'] || '9.4'
+
     execute('test-unit', '-p', {
-        DB: (ENV['DB'] || 'postgresql')
+        DB: db,
+        DB_VERSION: db_version
     })
   end
 
