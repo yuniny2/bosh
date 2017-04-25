@@ -363,6 +363,12 @@ module Bosh::Director
         @stemcell.os == os
       end
 
+      def referenced_variable_sets
+        unignored_instance_plans.collect do |instance_plan|
+            instance_plan.instance.variable_set
+        end
+      end
+
       private
 
       def run_time_dependencies

@@ -32,36 +32,6 @@ module Bosh::Director::ConfigServer
       allow(ip3).to receive(:instance).and_return(im3)
     end
 
-    context '#update_instance_plans_variable_set_id' do
-      it "should update all instances to use current_variable_set id" do
-        expect(im1).to receive(:variable_set=).with(variable_set2)
-        expect(im2).to receive(:variable_set=).with(variable_set2)
-        expect(im3).to receive(:variable_set=).with(variable_set2)
-
-        VariablesHandler.update_instance_plans_variable_set_id(instance_groups, true, variable_set2)
-      end
-    end
-
-    context '#mark_new_current_variable_set' do
-      before do
-        variable_current = Bosh::Director::Models::VariableSet.make(deployment: deployment)
-
-        allow(deployment).to receive(:variable_sets).and_return([variable_current, variable_set, variable_set2])
-        allow(deployment).to receive(:current_variable_set).and_return(variable_current)
-      end
-
-      it 'mark the old variable sets as old and the current as new' do
-        Bosh::Director::ConfigServer::VariablesHandler.mark_new_current_variable_set(deployment)
-
-        expect(deployment.variable_sets.size).to eq(3)
-        expect(deployment.variable_sets[0].deployed_successfully).to be_truthy
-
-        deployment.variable_sets.drop(1).each do |variable_set|
-          expect(variable_set.deployed_successfully).to be_falsey
-        end
-      end
-    end
-
     context '#remove_unused_variable_sets' do
       before do
         allow(deployment).to receive(:variable_sets).and_return([variable_set, variable_set2, variable_set3])

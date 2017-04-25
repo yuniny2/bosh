@@ -696,4 +696,41 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
 
   end
+
+  describe '#referenced_variable_sets' do
+    let(:spec) do
+      {
+          'name' => 'foobar',
+          'release' => 'appcloud',
+          'instances' => 1,
+          'vm_type' => 'dea',
+          'stemcell' => 'dea',
+          'networks'  => [{'name' => 'fake-network-name'}],
+          'properties' => {},
+          'template' => %w(foo bar),
+      }
+    end
+    let(:variable_set1){ instance_double(Bosh::Director::Models::VariableSet) }
+    let(:variable_set2){ instance_double(Bosh::Director::Models::VariableSet) }
+    let(:instance1){ instance_double(Bosh::Director::DeploymentPlan::Instance)}
+    let(:instance2){ instance_double(Bosh::Director::DeploymentPlan::Instance)}
+    let(:instance_plan1) { instance_double(BD::DeploymentPlan::InstancePlan) }
+    let(:instance_plan2 ) { instance_double(BD::DeploymentPlan::InstancePlan) }
+
+    before do
+      allow(plan).to receive(:properties).and_return({})
+      allow(plan).to receive(:release).with('appcloud').and_return(release)
+
+      allow(instance1).to receive(:variable_set).and_return(variable_set1)
+      allow(instance2).to receive(:variable_set).and_return(variable_set2)
+
+      allow(instance_plan1).to receive(:instance).and_return(instance1)
+      allow(instance_plan2).to receive(:instance).and_return(instance2)
+
+      allow(instance_group).to receive(:unignored_instance_plans).and_return([instance_plan1,instance_plan2])
+    end
+    it 'returns a list of variable sets referenced by the needed_instance_plans' do
+      expect(instance_group.referenced_variable_sets).to contain_exactly(variable_set1, variable_set2)
+    end
+  end
 end

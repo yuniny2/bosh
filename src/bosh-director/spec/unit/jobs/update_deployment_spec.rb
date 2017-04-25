@@ -69,7 +69,7 @@ module Bosh::Director
           allow(variables_interpolator).to receive(:interpolate_template_spec_properties) { |properties, _| properties }
           allow(variables_interpolator).to receive(:interpolate_link_spec_properties) { |links_spec| links_spec }
           allow(variables_interpolator).to receive(:interpolate_deployment_manifest) { |manifest| manifest }
-          allow(deployment_model).to receive(:current_variables_set).and_return(variable_set)
+          allow(deployment_model).to receive(:current_variable_set).and_return(variable_set)
           allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
         end
 
@@ -87,17 +87,55 @@ module Bosh::Director
           context "when options hash contains 'deploy' key" do
             let(:options) { {'deploy' => true} }
             let(:fixed_time) { Time.now }
+            let(:instance_plan1) {instance_double(Bosh::Director::DeploymentPlan::InstancePlan)}
+            let(:instance_plan2) {instance_double(Bosh::Director::DeploymentPlan::InstancePlan)}
+            let(:instance_plans) { [instance_plan1, instance_plan2] }
+            let(:instance1) { instance_double(Bosh::Director::DeploymentPlan::Instance)}
+            let(:instance2) { instance_double(Bosh::Director::DeploymentPlan::Instance)}
 
             before do
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
               allow(Time).to receive(:now).and_return(fixed_time)
-              expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:update_instance_plans_variable_set_id)
-              expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:mark_new_current_variable_set)
-              expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:remove_unused_variable_sets)
+              allow(deployment_model).to receive(:add_variable_set)
+
+              allow(deployment_job).to receive(:unignored_instance_plans).and_return(instance_plans)
+
+              allow(job_renderer).to receive(:render_job_instances)
+              allow(instance_plan1).to receive(:instance).and_return(instance1)
+              allow(instance_plan2).to receive(:instance).and_return(instance2)
+
+              allow(instance1).to receive(:variable_set=)
+              allow(instance2).to receive(:variable_set=)
             end
 
             it 'should create a new variable set for the deployment and mark variable sets' do
               expect(deployment_model).to receive(:add_variable_set).with({:created_at => fixed_time, :writable => true})
+              job.perform
+            end
+
+            it "should set the VariableSet's deployed_successfully field" do
+              expect(variable_set).to receive(:update)
+              job.perform
+            end
+
+            it 'cleans up old VariableSets' do
+              allow(deployment_job).to receive(:referenced_variable_sets).and_return([variable_set])
+
+              old_variable_set1 =  Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+              old_variable_set2 =  Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+
+
+              expect(variable_set).to_not receive(:delete)
+              expect(old_variable_set1).to receive(:delete).once
+              expect(old_variable_set2).to receive(:delete).once
+
+              job.perform
+            end
+
+            it 'updates unignored instance plan with current variable set' do
+              expect(instance1).to receive(:variable_set=).with(variable_set)
+              expect(instance2).to receive(:variable_set=).with(variable_set)
+
               job.perform
             end
           end
@@ -108,8 +146,8 @@ module Bosh::Director
             it 'should NOT mark new variable set or remove unused variable sets' do
               expect(Models::Deployment).to_not receive(:find).with({name: 'deployment-name'})
 
-              expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:update_instance_plans_variable_set_id)
-              expect(Bosh::Director::ConfigServer::VariablesHandler).to_not receive(:mark_new_current_variable_set)
+              # expect(Bosh::Director::ConfigServer::VariablesHandler).to receive(:update_instance_plans_variable_set_id)
+              expect(variable_set).to_not receive(:update).with(:deployed_successfully => true)
               expect(Bosh::Director::ConfigServer::VariablesHandler).to_not receive(:remove_unused_variable_sets)
 
               job.perform
@@ -194,7 +232,7 @@ module Bosh::Director
               before do
                 allow(variable_set_1).to receive(:update)
                 allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
-                allow(ConfigServer::VariablesHandler).to receive(:mark_new_current_variable_set)
+                allow(variable_set).to receive(:update).with(:deployed_successfully => true)
                 allow(ConfigServer::VariablesHandler).to receive(:remove_unused_variable_sets)
               end
 
@@ -331,7 +369,7 @@ module Bosh::Director
             let(:options) { {'deploy' => true} }
             before do
               allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
-              allow(ConfigServer::VariablesHandler).to receive(:mark_new_current_variable_set)
+              allow(variable_set_1).to receive(:update).with(:deployed_successfully => true)
               allow(ConfigServer::VariablesHandler).to receive(:remove_unused_variable_sets)
             end
             it 'should mark variable_set.writable to false' do
