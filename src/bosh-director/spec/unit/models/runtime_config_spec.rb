@@ -56,5 +56,49 @@ module Bosh::Director::Models
         end
       end
     end
+
+    describe '#latest_set' do
+      it 'returns the list of latest runtime configs grouped by name' do
+        moop1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: moop1', name: 'moop').save
+        default = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: default', name: '').save
+        moop2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: moop2', name: 'moop').save
+        boopis1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: boopis1', name: 'boopis').save
+        boopis2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: boopis2', name: 'boopis').save
+
+        expect(Bosh::Director::Models::RuntimeConfig.latest_set).to contain_exactly(moop2, default, boopis2)
+      end
+
+      it 'returns empty list when there are no records' do
+        expect(Bosh::Director::Models::RuntimeConfig.latest_set).to be_empty()
+      end
+    end
+
+    describe '#latest_set_ids' do
+      it 'returns the list of latest runtime config ids that are grouped by name' do
+        moop1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: moop1', name: 'moop').save
+        default = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: default', name: '').save
+        moop2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: moop2', name: 'moop').save
+        boopis1 = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: boopis1', name: 'boopis').save
+        boopis2 = Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: boopis2', name: 'boopis').save
+
+        expect(Bosh::Director::Models::RuntimeConfig.latest_set_ids).to contain_exactly(moop2.id, default.id, boopis2.id)
+      end
+
+      it 'returns empty list when there are no records' do
+        expect(Bosh::Director::Models::RuntimeConfig.latest_set_ids).to be_empty()
+      end
+    end
+
+    describe '#find_by_ids' do
+      it 'returns all records that match ids' do
+        runtime_configs = [
+          Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: rc_1', name: 'rc_1').save,
+          Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: rc_2', name: 'rc_2').save,
+          Bosh::Director::Models::RuntimeConfig.new(properties: 'super_shiny: rc_3', name: 'rc_3').save
+        ]
+
+        expect(Bosh::Director::Models::RuntimeConfig.find_by_ids(runtime_configs.map(&:id))).to eq(runtime_configs)
+      end
+    end
   end
 end

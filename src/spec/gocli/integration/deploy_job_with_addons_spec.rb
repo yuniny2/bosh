@@ -292,4 +292,49 @@ describe 'deploy job with addons', type: :integration do
       expect(File.exist?(depl_addon_instance.job_path('dummy'))).to eq(true)
     end
   end
+
+
+  describe 'when there are default & named runtime-configs defined' do
+    it 'merges the default & named runtime-configs for a deploy' do
+      default_runtime_config_file = yaml_file('runtime_config.yml',Bosh::Spec::Deployments.runtime_config_with_addon)
+
+      named_runtime_config1 = Bosh::Spec::Deployments.runtime_config_with_addon
+      named_runtime_config1['releases'][0] = {'name' => 'test_release', 'version' => '1'}
+      named_runtime_config1['addons'][0]['name'] = 'addon2'
+      named_runtime_config1['addons'][0]['jobs'][0] = {'name' => 'job_using_pkg_1', 'release' => 'test_release'}, {'name' => 'job_using_pkg_1_and_2', 'release' => 'test_release'}
+
+      named_runtime_config2 = Bosh::Spec::Deployments.runtime_config_with_addon
+      named_runtime_config1['releases'][0] = {'name' => 'test_release_2', 'version' => '2'}
+      named_runtime_config2['addons'][0]['name'] = 'addon2'
+      named_runtime_config2['addons'][0]['jobs'][0] = {'name' => 'job_using_pkg_2', 'release' => 'test_release_2'}, {'name' => 'job_using_pkg_5', 'release' => 'test_release_2'}
+
+
+      named_runtime_config_file_1 = yaml_file('runtime_config.yml',named_runtime_config1)
+      named_runtime_config_file_2 = yaml_file('runtime_config.yml',named_runtime_config2)
+
+      expect(bosh_runner.run("update-runtime-config #{default_runtime_config_file.path}")).to include('Succeeded')
+      expect(bosh_runner.run("update-runtime-config --name=rc_1 #{named_runtime_config_file_1.path}")).to include('Succeeded')
+      expect(bosh_runner.run("update-runtime-config --name=rc_2 #{named_runtime_config_file_2.path}")).to include('Succeeded')
+
+      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
+      bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
+
+      cloud_config_hash = Bosh::Spec::Deployments.simple_os_specific_cloud_config
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      # deploy_from_scratch
+
+      # Check to see jobs from all 3 runtime configs are present
+    end
+
+    it 'uses the latest versions of configs when merging the default & named runtime-configs for a deploy' do
+
+
+    end
+
+    context 'on a successfull deploy' do
+      it 'a new named runtime-config is uploaded and a recreate occurs, it shouldnt use the new runtime config' do end
+      it 'a default runtime-config is uploaded and a recreate occurs, it shouldnt use the new runtime config' do end
+    end
+  end
 end

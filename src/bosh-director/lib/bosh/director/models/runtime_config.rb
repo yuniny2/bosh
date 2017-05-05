@@ -24,6 +24,18 @@ module Bosh
           interpolated_manifest = interpolated_manifest_for_deployment(deployment_name)
           interpolated_manifest['tags'] ? interpolated_manifest['tags']: {}
         end
+
+        # def self.latest_set_ids
+        #   latest_set.map(&:id)
+        # end
+
+        def self.latest_set
+          self.dataset.where('id in (select max("id") from runtime_configs group by "name")').all
+        end
+
+        def self.find_by_ids(ids)
+          self.dataset.where(:id => ids).all
+        end
       end
     end
   end

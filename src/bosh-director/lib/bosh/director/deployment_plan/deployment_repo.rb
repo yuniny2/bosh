@@ -14,6 +14,7 @@ module Bosh::Director
           deployment = nil
         end
 
+        # return if deployment exists, new deployment
         return deployment if deployment
 
         if options['scopes']
@@ -21,7 +22,7 @@ module Bosh::Director
           attributes.merge!(teams: team_scopes)
         end
 
-        attributes.merge!(cloud_config: options['cloud_config'], runtime_config: options['runtime_config'])
+        attributes.merge!(cloud_config: options['cloud_config'], runtime_configs: options['runtime_configs'])
         create_for_attributes(attributes)
       end
 
@@ -38,6 +39,7 @@ module Bosh::Director
             end
           end
 
+          # JAMIL - CHANGE ME
           Bosh::Director::Models::Deployment.create_with_teams(attributes)
         end
       end

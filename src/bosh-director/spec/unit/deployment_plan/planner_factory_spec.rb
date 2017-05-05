@@ -11,7 +11,8 @@ module Bosh
         let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
         let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
         let(:cloud_config_model) { Models::CloudConfig.make(raw_manifest: cloud_config_hash) }
-        let(:runtime_config_model) { Models::RuntimeConfig.make(raw_manifest: runtime_config_hash) }
+        let(:runtime_config_models) { [instance_double(Bosh::Director::Models::RuntimeConfig)] }
+        let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator)}
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
         let(:manifest_with_config_keys) { Bosh::Spec::Deployments.simple_manifest.merge({"name" => "with_keys"}) }
@@ -34,6 +35,7 @@ module Bosh
 
         before do
           allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config] }
+          allow(runtime_config_consolidator).to receive(:tags)
           upload_releases
           upload_stemcell
           configure_config
@@ -42,7 +44,7 @@ module Bosh
 
         describe '#create_from_manifest' do
           let(:planner) do
-            subject.create_from_manifest(manifest, cloud_config_model, runtime_config_model, plan_options)
+            subject.create_from_manifest(manifest, cloud_config_model, runtime_config_models, plan_options)
           end
 
           it 'returns a planner' do
@@ -106,7 +108,7 @@ LOGMESSAGE
           it 'raises error when manifest has cloud_config properties' do
             hybrid_manifest_hash['vm_types'] = 'foo'
             expect{
-              subject.create_from_manifest(manifest, cloud_config_model, runtime_config_model, plan_options)
+              subject.create_from_manifest(manifest, cloud_config_model, runtime_config_models, plan_options)
             }.to raise_error(Bosh::Director::DeploymentInvalidProperty)
           end
 
@@ -117,7 +119,7 @@ LOGMESSAGE
 
             describe 'tags' do
               context 'when runtime config is not present' do
-                let(:runtime_config_model) { nil }
+                let(:runtime_config_models) { [] }
                 it 'only uses the tags from the deployment manifest' do
                   hybrid_manifest_hash['tags'] = {'deployment_tag' => 'sears'}
 

@@ -18,8 +18,12 @@ module Bosh::Director
             end
           # end
 
+          # JAMIL: need to remove references for old runtime configs. Maybe add a lock too, maybe not
+
           @deployment_plan.model.manifest = YAML.dump(@deployment_plan.uninterpolated_manifest_text)
           @deployment_plan.model.cloud_config = @deployment_plan.cloud_config
+
+          # JAMIL: Change me
           @deployment_plan.model.runtime_config = @deployment_plan.runtime_config
           @deployment_plan.model.link_spec = @deployment_plan.link_spec
           @deployment_plan.model.save

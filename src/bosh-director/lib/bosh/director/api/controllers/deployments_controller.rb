@@ -365,21 +365,21 @@ module Bosh::Director
           @logger.debug("Deploying with context #{params['context']}")
           context = JSON.parse(params['context'])
           cloud_config = Api::CloudConfigManager.new.find_by_id(context['cloud_config_id'])
-          runtime_config = Api::RuntimeConfigManager.new.find_by_id(context['runtime_config_id'])
+          runtime_configs = Models::RuntimeConfig.find_by_ids(context['runtime_config_ids'])
         else
           cloud_config = Api::CloudConfigManager.new.latest
-          runtime_config = Api::RuntimeConfigManager.new.latest
+          runtime_configs = Models::RuntimeConfig.latest_set
         end
 
         options['cloud_config'] = cloud_config
-        options['runtime_config'] = runtime_config
+        options['runtime_configs'] = runtime_configs
         options['deploy'] = true
 
         deployment_name = deployment['name']
         options['new'] = Models::Deployment[name: deployment_name].nil? ? true : false
         deployment_model = @deployments_repo.find_or_create_by_name(deployment_name, options)
 
-        task = @deployment_manager.create_deployment(current_user, YAML.dump(deployment), cloud_config, runtime_config, deployment_model, options, @current_context_id)
+        task = @deployment_manager.create_deployment(current_user, YAML.dump(deployment), cloud_config, runtime_configs, deployment_model, options, @current_context_id)
 
         redirect "/tasks/#{task.id}"
       end
