@@ -113,12 +113,14 @@ resources:
         secret_key: {{aws_secret_key__primary}}
         region:     {{aws_region__primary}}
         ssh_public_key: {{aws_ssh_public_key}}
+
   - name: bosh-cli
     type: s3
     source:
-      regexp: bosh-cli-([0-9.]+)-linux-amd64
-      bucket: bosh-cli-artifacts
-      region_name: us-east-1
+      regexp: alpha-bosh-cli-(.*)-linux-amd64
+      bucket: {{bosh_cli_aws_s3_alpha_release_bucket}}
+      region_name: {{bosh_cli_aws_s3_release_bucket_region}}
+
   - name: ubuntu-stemcell
     type: bosh-io-stemcell
     source:
