@@ -259,6 +259,11 @@ module Bosh::Director
       def set_variables(variables_obj)
         @variables = variables_obj
       end
+
+      def availability_zone_names
+        @cloud_planner.availability_zone_names
+      end
+
     end
   end
 end
