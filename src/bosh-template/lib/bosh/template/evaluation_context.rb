@@ -45,10 +45,8 @@ module Bosh
         @spec = openstruct(spec, BackCompatOpenStruct)
         @raw_properties = spec['properties'] || {}
         @properties = openstruct(@raw_properties)
-        puts @spec.inspect
 
         @links = spec['links'] || {}
-        @az_hash = spec['az_hash'] || {}
       end
 
       # @return [Binding] Template binding
@@ -101,9 +99,9 @@ module Bosh
 
         if result.has_key?("instances")
           instance_array = result["instances"].map do |link_spec|
-            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["network"], link_spec["properties"], link_spec["bootstrap"])
+            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"], link_spec["bootstrap"])
           end
-          return EvaluationLink.new(instance_array, result["properties"], @az_hash)
+          return EvaluationLink.new(instance_array, result["properties"])
         end
         raise UnknownLink.new(name)
       end
@@ -131,10 +129,10 @@ module Bosh
           return ActiveElseBlock.new(self)
         else
           instance_array = link_found["instances"].map do |link_spec|
-            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["network"],link_spec["properties"], link_spec["bootstrap"])
+            EvaluationLinkInstance.new(link_spec["name"], link_spec["index"], link_spec["id"], link_spec["az"], link_spec["address"], link_spec["properties"], link_spec["bootstrap"])
           end
 
-          yield EvaluationLink.new(instance_array, link_found["properties"], @az_hash)
+          yield EvaluationLink.new(instance_array, link_found["properties"])
           InactiveElseBlock.new
         end
       end

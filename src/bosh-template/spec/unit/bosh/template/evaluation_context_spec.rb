@@ -9,20 +9,12 @@ module Bosh
       def eval_template(erb, context)
         ERB.new(erb).result(context.get_binding)
       end
-      let(:az_hash) do
-        {
-          'az1'   => 1,
-          'az2'   => 2,
-          'my_az' => 3,
-        }
-      end
 
       before do
         @spec = {
           'job' => {
             'name' => 'foobar'
           },
-          'az_hash' => az_hash,
           'properties' => {
             'foo' => 'bar',
             'router' => {'token' => 'zbb'},
@@ -30,15 +22,8 @@ module Bosh
             'vfalse' => false
           },
           'links' => {
-            'fake-link-1' => {
-              'instances' => [{'name' => 'link_name', 'address' => "123.456.789.101", 'network' => 'network1', 'properties' => {'prop1' => 'value1'}}],
-              'properties' => {
-                'propA' => 'valueA'
-              }
-            },
-            'fake-link-2' => {
-              'instances' => [{'name' => 'link_name', 'address' => "123.456.789.102", 'network' => 'network2', 'properties' => {'prop2' => 'value2'}}]
-            }
+            'fake-link-1' => {'instances' => [{'name' => 'link_name', 'address' => "123.456.789.101", 'properties' => {'prop1' => 'value'}}]},
+            'fake-link-2' => {'instances' => [{'name' => 'link_name', 'address' => "123.456.789.102", 'properties' => {'prop2' => 'value'}}]}
           },
           'networks' => {
             'network1' => {
@@ -95,22 +80,11 @@ module Bosh
       it 'evaluates links' do
         expect(eval_template("<%= link('fake-link-1').instances[0].address %>", @context)).to eq('123.456.789.101')
         expect(eval_template("<%= link('fake-link-2').instances[0].address %>", @context)).to eq('123.456.789.102')
-        expect(eval_template("<%= link('fake-link-1').instances[0].network %>", @context)).to eq('network1')
-        expect(eval_template("<%= link('fake-link-2').instances[0].network %>", @context)).to eq('network2')
-      end
-
-      it 'evaluates links az hash' do
-        expect(eval_template("<%= link('fake-link-1').az_hash %>", @context)).to eq(az_hash.inspect)
-        # expect(eval_template("<%= link('fake-link-2').address(azs:[az1]) %>", @context)).to eq('bar1')
       end
 
       it 'evaluates link properties' do
-        expect(eval_template("<%= link('fake-link-1').p('propA') %>", @context)).to eq('valueA')
-      end
-
-      it 'evaluates link instance properties' do
-        expect(eval_template("<%= link('fake-link-1').instances[0].p('prop1') %>", @context)).to eq('value1')
-        expect(eval_template("<%= link('fake-link-2').instances[0].p('prop2') %>", @context)).to eq('value2')
+        expect(eval_template("<%= link('fake-link-1').instances[0].p('prop1') %>", @context)).to eq('value')
+        expect(eval_template("<%= link('fake-link-2').instances[0].p('prop2') %>", @context)).to eq('value')
       end
 
       it 'should throw a nice error when a link cannot be found' do

@@ -10,17 +10,15 @@ module Bosh
       attr_reader :id
       attr_reader :az
       attr_reader :address
-      attr_reader :network
       attr_reader :properties
       attr_reader :bootstrap
 
-      def initialize(name, index, id, az, address, network, properties, bootstrap)
+      def initialize(name, index, id, az, address, properties, bootstrap)
         @name = name
         @index = index
         @id = id
         @az = az
         @address = address
-        @network = network
         @properties = properties
         @bootstrap = bootstrap
       end
