@@ -12,7 +12,13 @@ module Bosh::Director
       let(:network_name) { 'smurf_network' }
       let(:job) { instance_double(Bosh::Director::DeploymentPlan::Job)  }
       let(:instance_group_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork) }
-
+      let(:az_hash) do
+        {
+          'az1'   => 1,
+          'az2'   => 2,
+          'my_az' => 3,
+        }
+      end
       let(:smurf_link_info) do
         {
           'name' => 'smurf_link',
@@ -44,6 +50,8 @@ module Bosh::Director
         allow(needed_instance).to receive(:bootstrap?).and_return(true)
         allow(needed_instance).to receive(:availability_zone).and_return('totototo')
         allow(needed_instance).to receive_message_chain(:availability_zone, :name).and_return('my_az')
+
+        allow(Models::AvailabilityZone).to receive(:lookup_table).and_return az_hash
       end
 
       context '#spec' do
@@ -54,6 +62,7 @@ module Bosh::Director
 
           expect(result_spec).to eq({
             'deployment_name' => 'smurf_deployment',
+            'az_hash' => az_hash,
             'networks' => ['instance_group_network_name'],
             'properties' => { 'a' => 'b' },
             'instances' => [
@@ -63,6 +72,7 @@ module Bosh::Director
                 'bootstrap' => true,
                 'id' => 'instance-uuid',
                 'az' => 'my_az',
+                'network' => network_name,
                 'address' => 'network-address-1',
                 'addresses' => ['network-address-1', 'network-address-2']
               }

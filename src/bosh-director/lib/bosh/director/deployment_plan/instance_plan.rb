@@ -225,6 +225,10 @@ module Bosh
           network_settings.network_addresses
         end
 
+        def addressable_network_name
+          network_settings.addressable_network_name
+        end
+
         def needs_shutting_down?
           return true if obsolete?
 

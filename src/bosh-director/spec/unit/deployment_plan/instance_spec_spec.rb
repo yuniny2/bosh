@@ -92,6 +92,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#apply_spec' do
       it 'returns a valid instance apply_spec' do
+        p "instance #{instance_spec.inspect}"
         network_name = network_spec['name']
         spec = instance_spec.as_apply_spec
         expect(spec['deployment']).to eq('fake-deployment')

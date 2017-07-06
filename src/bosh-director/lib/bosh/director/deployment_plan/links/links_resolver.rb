@@ -43,7 +43,6 @@ module Bosh::Director
             link_spec['instances'].each do |instance|
               instance.delete('addresses')
             end
-
             instance_group.add_resolved_link(job.name, link_name, link_spec)
           end
         end

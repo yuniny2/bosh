@@ -5,10 +5,16 @@ module Bosh
 
       attr_reader :instances
       attr_reader :properties
+      attr_reader :az_hash
 
-      def initialize(instances, properties)
+      def initialize(instances, properties, az_hash)
         @instances = instances
         @properties = properties
+        @az_hash = az_hash
+      end
+
+      def foo(*args)
+        'bar' + args[0].inspect
       end
 
       def p(*args)

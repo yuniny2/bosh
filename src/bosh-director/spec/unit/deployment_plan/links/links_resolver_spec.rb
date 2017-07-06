@@ -15,6 +15,15 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     generate_deployment_manifest('fake-deployment', links, ['127.0.0.3', '127.0.0.4'])
   end
 
+  let(:az_hash) do
+    {
+      'az1'   => 1,
+      'az2'   => 2,
+      'my_az' => 3,
+    }
+  end
+
+
   def generate_deployment_manifest(name, links, mysql_static_ips)
     {
       'name' => name,
@@ -131,6 +140,10 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     template_model = Bosh::Director::Models::Template.make(name: 'template-without-links')
     version.add_template(template_model)
 
+    Bosh::Director::Models::AvailabilityZone.make(name: 'az1')
+    Bosh::Director::Models::AvailabilityZone.make(name: 'az2')
+    Bosh::Director::Models::AvailabilityZone.make(name: 'my_az')
+
     template_model = Bosh::Director::Models::Template.make(name: 'mysql-template',
       provides: provided_links,
       properties: {mysql: {description: 'some description'}},
@@ -164,6 +177,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
           spec = {
             'deployment_name' => api_server_job.deployment_name,
+            'az_hash' => az_hash,
             "networks" => ["fake-manual-network", "fake-dynamic-network"],
             "properties" => {"mysql" => nil},
             "instances" => [
@@ -194,8 +208,37 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
     end
 
     context 'when job consumes link from another deployment' do
-      let(:links) { {'db' => {"from" => 'db', 'deployment' => 'other-deployment'}} }
-      let(:link_spec) { {"mysql" => {"mysql-template" => {"db" => {"db" => {"deployment_name" => "other-deployment", "networks" => ["fake-manual-network", "fake-dynamic-network"], "properties" => {"mysql" => nil}, "instances" => [{"name" => "mysql", "index" => 0, "bootstrap" => true, "id" => "7aed7038-0b3f-4dba-ac6a-da8932502c00", "az" => nil, "address" => "127.0.0.4", "addresses" => {"fake-manual-network" => "127.0.0.4", "fake-dynamic-network" => "7aed7038-0b3f-4dba-ac6a-da8932502c00.mysql.fake-dynamic-network.other-deployment.bosh"}}, {"name" => "mysql", "index" => 1, "bootstrap" => false, "id" => "adecbe93-e242-4585-acde-ffbc1dad4b41", "az" => nil, "address" => "127.0.0.5", "addresses" => {"fake-manual-network" => "127.0.0.5", "fake-dynamic-network" => "adecbe93-e242-4585-acde-ffbc1dad4b41.mysql.fake-dynamic-network.other-deployment.bosh"}}]}}}}} }
+      let(:links) { {'db' => {'from' => 'db', 'deployment' => 'other-deployment'}} }
+      let(:link_spec) {
+        {'mysql' =>
+          {'mysql-template' =>
+            {'db' =>
+              {'db' =>
+                { 'deployment_name' => 'other-deployment',
+                  'az_hash' => az_hash,
+                  'networks' => ['fake-manual-network', 'fake-dynamic-network'],
+                  'properties' => {'mysql' => nil},
+                  'instances' => [
+                    { 'name' => 'mysql',
+                      'index' => 0,
+                      'bootstrap' => true,
+                      'id' => '7aed7038-0b3f-4dba-ac6a-da8932502c00',
+                      'az' => nil,
+                      'address' => '127.0.0.4',
+                      'addresses' => {
+                        'fake-manual-network' => '127.0.0.4',
+                        'fake-dynamic-network' => '7aed7038-0b3f-4dba-ac6a-da8932502c00.mysql.fake-dynamic-network.other-deployment.bosh'}},
+                    { 'name' => 'mysql',
+                      'index' => 1,
+                      'bootstrap' => false,
+                      'id' => 'adecbe93-e242-4585-acde-ffbc1dad4b41',
+                      'az' => nil,
+                      'address' => '127.0.0.5',
+                      'addresses' => {
+                        'fake-manual-network' => '127.0.0.5',
+                        'fake-dynamic-network' => 'adecbe93-e242-4585-acde-ffbc1dad4b41.mysql.fake-dynamic-network.other-deployment.bosh'}}]
+                }}}}}
+      }
 
       context 'when another deployment has link source' do
         before do
@@ -209,6 +252,7 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
 
           spec = {
             'deployment_name' => provider_dep.name,
+            'az_hash' => az_hash,
             'networks' => ['fake-manual-network', 'fake-dynamic-network'],
             "properties" => {"mysql" => nil},
             'instances' => [
@@ -232,7 +276,6 @@ describe Bosh::Director::DeploymentPlan::LinksResolver do
           }
 
           links_hash = {"api-server-template" => {"db" => spec}}
-
           expect(api_server_job.resolved_links).to eq(links_hash)
         end
       end
@@ -281,6 +324,7 @@ Unable to process links for deployment. Errors are:
 
         link_spec = {
           'deployment_name' => api_server_job.deployment_name,
+          'az_hash' => az_hash,
           'networks' => ['fake-manual-network', 'fake-dynamic-network'],
           "properties" => {"mysql" => nil},
           'instances' => [
@@ -501,6 +545,7 @@ Unable to process links for deployment. Errors are:
 
         link_spec = {
           'deployment_name' => api_server_job.deployment_name,
+          'az_hash' => az_hash,
           'networks' => ['fake-manual-network', 'fake-dynamic-network'],
           "properties" => {"mysql" => nil},
           'instances' => [

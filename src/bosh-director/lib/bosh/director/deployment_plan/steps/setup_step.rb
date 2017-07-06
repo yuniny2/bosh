@@ -12,6 +12,8 @@ module Bosh::Director
         end
 
         def perform
+          # commit AZs to the table using:
+          # @deployment_plan.cloud_planner.availability_zones_list
           push_any_new_azs(@deployment_plan.availability_zone_names)
           create_vms
         end

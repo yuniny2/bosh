@@ -79,5 +79,9 @@ module Bosh::Director
       network_addresses
     end
 
+    def addressable_network_name
+      @default_network['addressable']
+    end
+
   end
 end

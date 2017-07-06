@@ -185,7 +185,9 @@ describe 'local DNS', type: :integration do
 
         'jobs' => [Bosh::Spec::Deployments.simple_job(
           name: instance_group_name,
-          instances: number_of_instances)]
+          instances: number_of_instances,
+          azs: ['z1','z2'],
+        )]
       })
     manifest_deployment['name'] = deployment_name
     manifest_deployment['jobs'][0]['networks'][0]['name'] = network_name
@@ -218,7 +220,7 @@ describe 'local DNS', type: :integration do
   def generate_instance_dns
     director.instances(deployment_name: deployment_name).map do |instance|
       {
-        'hostname' => "#{instance.id}.job-to-test-local-dns.local-dns.simplelocal-dns.bosh",
+        'hostname' => "#{instance.id}.job-to-test-local-dns.a.simplelocal-dns.bosh",
         'ip' => instance.ips[0],
       }
     end
@@ -226,7 +228,7 @@ describe 'local DNS', type: :integration do
 
   def generate_instance_records
     director.instances(deployment_name: deployment_name).map do |instance|
-      [instance.ips[0], "#{instance.id}.job-to-test-local-dns.local-dns.simplelocal-dns.bosh"]
+      [instance.ips[0], "#{instance.id}.job-to-test-local-dns.a.simplelocal-dns.bosh"]
     end
   end
 
@@ -237,7 +239,8 @@ describe 'local DNS', type: :integration do
         instance.id,
         Bosh::Director::Canonicalizer.canonicalize(instance.job_name),
         az,
-        Bosh::Director::Canonicalizer.canonicalize('local_dns'),
+        index_by_az(az),
+        Bosh::Director::Canonicalizer.canonicalize('a'),
         Bosh::Director::Canonicalizer.canonicalize('simple.local_dns'),
         instance.ips[0],
         'bosh',
@@ -263,5 +266,16 @@ describe 'local DNS', type: :integration do
       fail("Cloud check failed, output: #{output}")
     end
     output
+  end
+end
+
+def index_by_az(name)
+  case name
+    when 'z1'
+      '0'
+    when 'z2'
+      '1'
+    else
+      raise 'bad az name'
   end
 end

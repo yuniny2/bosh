@@ -78,5 +78,9 @@ module Bosh::Director
         db[:availability_zones] << {name: nil}
       }.to raise_error Sequel::NotNullConstraintViolation
     end
+
+    # it 'deletes the availability_zone field from orphan_disks' do
+      # TODO maybe not
+    # end
   end
 end
