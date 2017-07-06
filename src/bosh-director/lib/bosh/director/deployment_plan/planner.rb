@@ -267,6 +267,10 @@ module Bosh::Director
       def set_features(features_obj)
         @features = features_obj
       end
+
+      def availability_zone_names
+        @cloud_planner.availability_zone_names
+      end
     end
   end
 end
