@@ -9,22 +9,15 @@ module Bosh::Director
 
     let(:deployment) { Models::Deployment.make(name: 'test-deployment') }
     let(:instance) { Models::Instance.make(availability_zone: 'az-1', deployment: deployment, job: 'test-instance', uuid: 'test-uuid') }
-    let(:persistent_disk) { Models::PersistentDisk.make(instance: instance, disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true) }
+    let(:persistent_disk) { Models::PersistentDisk.make(instance: instance, disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true, cpi: 'some-cpi') }
 
     let(:event_manager) {Api::EventManager.new(true)}
     let(:task_id) {42}
     let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager)}
 
-    before do
-      allow(Config).to receive(:current_job).and_return(update_job)
-      allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
-    end
+    before { allow(Config).to receive(:current_job).and_return(update_job) }
 
     describe '#orphan_disk' do
-      before do
-        allow(cloud_factory).to receive(:get_name_for_az).with('az-1').and_return('some-cpi')
-      end
-
       it 'orphans disks and snapshots' do
         snapshot = Models::Snapshot.make(persistent_disk: persistent_disk)
 
@@ -75,8 +68,13 @@ module Bosh::Director
 
     describe '#unorphan_disk' do
       let(:instance) { Models::Instance.make(id: 123, availability_zone: 'az1') }
-      let(:orphan_disk) { Models::OrphanDisk.make(disk_cid: 'disk456', size: 2048, availability_zone: 'az1',
-                                                  cloud_properties: {'test_property' => '1'}) }
+      let(:orphan_disk) { Models::OrphanDisk.make(
+        disk_cid: 'disk456',
+        size: 2048,
+        availability_zone: 'az1',
+        cloud_properties: {'test_property' => '1'},
+        cpi: 'some-cpi'
+      ) }
 
       it 'unorphans disks and snapshots' do
         snapshot = Models::OrphanSnapshot.make(orphan_disk: orphan_disk)
@@ -88,6 +86,7 @@ module Bosh::Director
         expect(persistent_disk).to eq(returned_disk)
 
         expect(persistent_disk.disk_cid).to eq(orphan_disk.disk_cid)
+        expect(persistent_disk.cpi).to eq('some-cpi')
         expect(persistent_snapshot.snapshot_cid).to eq(snapshot.snapshot_cid)
         expect(persistent_snapshot.persistent_disk).to eq(returned_disk)
 
@@ -156,6 +155,7 @@ module Bosh::Director
       let!(:orphan_disk_snapshot_1b) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, created_at: Time.now, snapshot_cid: 'snap-cid-b') }
       let!(:orphan_disk_snapshot_2) { Models::OrphanSnapshot.make(orphan_disk: orphan_disk_2, created_at: Time.now, snapshot_cid: 'snap-cid-2') }
       before do
+        allow(CloudFactory).to receive(:create_with_latest_configs).and_return(cloud_factory)
         allow(cloud).to receive(:delete_disk)
         allow(cloud).to receive(:delete_snapshot)
       end
