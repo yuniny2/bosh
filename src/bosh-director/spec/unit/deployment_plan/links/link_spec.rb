@@ -72,6 +72,7 @@ module Bosh::Director
               'properties' => { 'a' => 'b' },
               'instances' => [
                 {
+                  'name' => 'my_source_instance_group_name',
                   'id' => 'instance-uuid',
                   'index' => 0,
                   'bootstrap' => true,

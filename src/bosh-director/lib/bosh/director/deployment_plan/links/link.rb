@@ -42,6 +42,7 @@ module Bosh::Director
             instance = instance_plan.instance
             availability_zone = instance.availability_zone.name if instance.availability_zone
             {
+              'name' => @source_instance_group.name,
               'id' => instance.uuid,
               'index' => instance.index,
               'bootstrap' => instance.bootstrap?,
