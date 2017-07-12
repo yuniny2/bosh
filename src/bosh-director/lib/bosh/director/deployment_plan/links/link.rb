@@ -14,18 +14,37 @@ module Bosh::Director
       end
 
       def spec
+        instance_plan = @source_instance_group.needed_instance_plans.first
+        if instance_plan
+          root_domain = instance_plan.root_domain
+        else
+          root_domain = Bosh::Director::Config.root_domain
+        end
+
+        if @network_name.nil?
+          if @source_instance_group.default_network.has_key?('addressable')
+            network = @source_instance_group.default_network['addressable']
+          else
+            network = @source_instance_group.default_network['gateway']
+          end
+        else
+          network = @network_name
+        end
+
         {
           'deployment_name' => @deployment_name,
+          'domain' => root_domain,
+          'default_network' => network,
           'networks' => @source_instance_group.networks.map { |network| network.name },
+          'source_instance_group' => @source_instance_group.name,
           'properties' => @job.provides_link_info(@source_instance_group.name, @name)['mapped_properties'],
           'instances' => @source_instance_group.needed_instance_plans.map do |instance_plan|
             instance = instance_plan.instance
             availability_zone = instance.availability_zone.name if instance.availability_zone
             {
-              'name' => @source_instance_group.name,
+              'id' => instance.uuid,
               'index' => instance.index,
               'bootstrap' => instance.bootstrap?,
-              'id' => instance.uuid,
               'az' => availability_zone,
               'address' => instance_plan.network_address(@network_name),
               'addresses' => instance_plan.network_addresses,
