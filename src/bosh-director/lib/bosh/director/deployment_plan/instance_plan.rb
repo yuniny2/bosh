@@ -217,7 +217,7 @@ module Bosh
             @instance.availability_zone,
             @instance.index,
             @instance.uuid,
-            @powerdns_manager.root_domain,
+            root_domain,
           )
         end
 
@@ -233,6 +233,14 @@ module Bosh
         # @return [Hash] A hash mapping network names to their associated address
         def network_addresses(prefer_dns_entry)
           network_settings.network_addresses(prefer_dns_entry)
+        end
+
+        def addressable_network_name
+          network_settings.addressable_network_name
+        end
+
+        def root_domain
+          @powerdns_manager.root_domain
         end
 
         def needs_shutting_down?

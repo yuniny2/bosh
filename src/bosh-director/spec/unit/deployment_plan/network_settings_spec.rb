@@ -103,6 +103,34 @@ module Bosh::Director::DeploymentPlan
             expect(network_settings.network_address).to eq('uuid-1.fake-job.net-a.fake-deployment.bosh1.tld')
           end
         end
+
+        describe '#addressable_network_name' do
+          it 'returns gateway network when addressable network is not specified' do
+            expect(network_settings.addressable_network_name).to eq('net_a')
+          end
+        end
+      end
+
+      context 'addressable network' do
+        let(:network_settings) do
+          NetworkSettings.new(
+            'fake-job',
+            'fake-deployment',
+            {'gateway' => 'net_a', 'addressable' => 'net_public'},
+            [reservation],
+            {'net_a' => {'ip' => '10.0.0.6', 'netmask' => '255.255.255.0', 'gateway' => '10.0.0.1'}},
+            az,
+            3,
+            'uuid-1',
+            'bosh1.tld',
+          )
+        end
+
+        describe '#addressable_network_name' do
+          it 'returns addressable network when addressable network is specified' do
+            expect(network_settings.addressable_network_name).to eq('net_public')
+          end
+        end
       end
 
       context 'when it is a dynamic network' do
