@@ -81,12 +81,6 @@ module Bosh::Director::DeploymentPlan
             expect(network_settings.network_ip_address).to eq('10.0.0.6')
           end
         end
-
-        describe '#addressable_network_name' do
-          it 'returns gateway network when addressable network is not specified' do
-            expect(network_settings.addressable_network_name).to eq('net_a')
-          end
-        end
       end
 
       context 'addressable network' do
@@ -102,12 +96,6 @@ module Bosh::Director::DeploymentPlan
             'uuid-1',
             'bosh1.tld',
           )
-        end
-
-        describe '#addressable_network_name' do
-          it 'returns addressable network when addressable network is specified' do
-            expect(network_settings.addressable_network_name).to eq('net_public')
-          end
         end
       end
 

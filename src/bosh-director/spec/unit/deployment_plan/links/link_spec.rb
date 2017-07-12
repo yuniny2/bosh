@@ -60,7 +60,6 @@ module Bosh::Director
 
           it 'returns correct spec structure, with network name' do
             allow(needed_instance_plan).to receive(:root_domain).and_return('smurf.tld')
-            allow(needed_instance_plan).to receive(:addressable_network_name).and_return('private_network_name')
 
             result_spec = subject.spec
 
