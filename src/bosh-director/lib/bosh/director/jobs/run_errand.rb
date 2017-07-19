@@ -55,7 +55,11 @@ module Bosh::Director
             logger.info('Starting to prepare for deployment')
             errand_instance_group.bind_instances(deployment_planner.ip_provider)
 
-            deployment_planner.job_renderer.render_job_instances(errand_instance_group.needed_instance_plans)
+            JobRenderer.render_job_instances_with_cache(
+              errand_instance_group.needed_instance_plans,
+              deployment_planner.template_blob_cache,
+              logger,
+            )
             compile_step(deployment_planner).perform
 
             if @when_changed
@@ -99,7 +103,7 @@ module Bosh::Director
             runner.run(&cancel_blk)
           end
         ensure
-          deployment_planner.job_renderer.clean_cache!
+          deployment_planner.template_blob_cache.clean_cache!
         end
       end
     end

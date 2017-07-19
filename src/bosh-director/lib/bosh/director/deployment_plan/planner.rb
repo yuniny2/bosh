@@ -54,7 +54,7 @@ module Bosh::Director
       # @return [DeploymentPlan::Variables] Returns the variables object of deployment
       attr_reader :variables
 
-      attr_reader :job_renderer
+      attr_reader :template_blob_cache
 
       attr_accessor :addons
 
@@ -94,7 +94,7 @@ module Bosh::Director
         @addons = []
 
         @logger = Config.logger
-        @job_renderer = JobRenderer.create
+        @template_blob_cache = Bosh::Director::Core::Templates::TemplateBlobCache.new
       end
 
       def_delegators :@cloud_planner,

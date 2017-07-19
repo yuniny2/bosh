@@ -73,15 +73,19 @@ module Bosh::Director
           instance_double(
             'Bosh::Director::DeploymentPlan::Planner',
             ip_provider: ip_provider,
-            job_renderer: job_renderer,
+            template_blob_cache: template_blob_cache,
           )
         end
         let(:compile_packages_step) { instance_double(DeploymentPlan::Steps::PackageCompileStep, perform: nil) }
-        let(:job_renderer) { JobRenderer.create.tap { |jr| allow(jr).to receive(:render_job_instances) } }
+        let(:template_blob_cache) { instance_double('Bosh::Director::Core::Templates::TemplateBlobCache') }
 
         let(:cloud_config) { Models::CloudConfig.make }
 
-        before { allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_packages_step) }
+        before do
+          allow(template_blob_cache).to receive(:clean_cache!)
+          allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, logger)
+          allow(DeploymentPlan::Steps::PackageCompileStep).to receive(:create).with(planner).and_return(compile_packages_step)
+        end
 
         context 'when job representing an errand exists' do
           let(:deployment_job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-errand-name', needed_instance_plans: []) }
@@ -174,7 +178,7 @@ module Bosh::Director
 
                 expect(job_manager).to receive(:delete_vms).with(no_args).ordered
 
-                expect(job_renderer).to receive(:clean_cache!).ordered
+                expect(template_blob_cache).to receive(:clean_cache!).ordered
 
                 expect(called_after_block_check).to receive(:call).ordered
 
@@ -295,7 +299,7 @@ module Bosh::Director
 
               context 'when errand is run with when-changed' do
                 before do
-                  allow(JobRenderer).to receive_message_chain(:create, :render_job_instances).with([instance_plan])
+                  allow(JobRenderer).to receive(:render_job_instances_with_cache).with([instance_plan], template_blob_cache, logger)
                   allow(deployment_job).to receive(:needed_instance_plans).and_return([instance_plan])
                 end
 
