@@ -124,12 +124,11 @@ module Bosh::Director::DeploymentPlan::Steps
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
       allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+      allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+      allow(Bosh::Director::JobRenderer).to receive(:render_job_instances_with_cache)
     end
 
-    before { allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
-
-    before { allow_any_instance_of(Bosh::Director::JobRenderer).to receive(:render_job_instances) }
 
     context 'the director database contains an instance with a static ip but no vm assigned (due to deploy failure)' do
       let(:instance_model) do
@@ -168,6 +167,7 @@ module Bosh::Director::DeploymentPlan::Steps
           Bosh::Director::JobUpdaterFactory.new(logger, deployment_plan.template_blob_cache)
         )
       end
+
       before do
         allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running'})
         allow(agent_client).to receive(:prepare)

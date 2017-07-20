@@ -1,6 +1,7 @@
 require 'bosh/director/core/templates'
 require 'bosh/director/core/templates/job_template_renderer'
 require 'bosh/director/core/templates/source_erb'
+require 'bosh/director/core/templates/template_blob_cache'
 
 module Bosh::Director
   class JobTemplateUnpackFailed < StandardError

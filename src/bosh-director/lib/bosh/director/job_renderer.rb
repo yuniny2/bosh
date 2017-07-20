@@ -1,6 +1,5 @@
 require 'bosh/director/core/templates/job_template_loader'
 require 'bosh/director/core/templates/job_instance_renderer'
-require 'bosh/director/core/templates/template_blob_cache'
 
 module Bosh::Director
   class JobRenderer

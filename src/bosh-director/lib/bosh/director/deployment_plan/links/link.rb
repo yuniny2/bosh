@@ -1,12 +1,10 @@
 module Bosh::Director
   module DeploymentPlan
-    # tested in links_resolver_spec
-
     class Link
       attr_reader :name
 
-      def initialize(deployment_name, name, source_instance_group, job, network_name = nil)
-        @deployment_name = deployment_name # Provider Deployment Name
+      def initialize(provider_deployment_name, name, source_instance_group, job, network_name=nil)
+        @provider_deployment_name = provider_deployment_name # Provider Deployment Name
         @name = name
         @source_instance_group = source_instance_group
         @network_name = network_name
@@ -21,24 +19,22 @@ module Bosh::Director
           root_domain = Bosh::Director::Config.root_domain
         end
 
-        if @network_name.nil?
-          if @source_instance_group.default_network.has_key?('addressable')
-            network = @source_instance_group.default_network['addressable']
-          else
-            network = @source_instance_group.default_network['gateway']
-          end
-        else
+        if !@network_name.nil?
           network = @network_name
+        else
+          network = @source_instance_group.default_network_name
         end
 
         {
-          'deployment_name' => @deployment_name,
+          'deployment_name' => @provider_deployment_name,
           'domain' => root_domain,
           'default_network' => network,
           'networks' => @source_instance_group.networks.map { |network| network.name },
           'instance_group' => @source_instance_group.name,
           'properties' => @job.provides_link_info(@source_instance_group.name, @name)['mapped_properties'],
           'instances' => @source_instance_group.needed_instance_plans.map do |instance_plan|
+            network_address = instance_plan.network_address(@network_name)
+
             instance = instance_plan.instance
             availability_zone = instance.availability_zone.name if instance.availability_zone
             {
@@ -47,8 +43,9 @@ module Bosh::Director
               'index' => instance.index,
               'bootstrap' => instance.bootstrap?,
               'az' => availability_zone,
-              'address' => instance_plan.network_address(@network_name),
-              'addresses' => instance_plan.network_addresses,
+              'address' => network_address,
+              'addresses' => instance_plan.network_addresses(true),
+              'ip_addresses' => instance_plan.network_addresses(false),
             }
           end
         }
