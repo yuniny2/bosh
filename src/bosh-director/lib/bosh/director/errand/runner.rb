@@ -32,12 +32,6 @@ module Bosh::Director
           end
         end
 
-        errand_run = Models::ErrandRun.find_or_create(instance_id: instance.model.id)
-        errand_run.update(successful: false,
-          successful_configuration_hash: '',
-          successful_packages_spec: ''
-        )
-
         agent_task_result = nil
         event_log_stage = Config.event_log.begin_stage('Running errand', 1)
         agent_task_id = nil
@@ -71,13 +65,13 @@ module Bosh::Director
           @task_result.write(JSON.dump(errand_result.to_hash) + "\n")
         end
 
-        if errand_result && errand_result.exit_code == 0
-          errand_run.update(
-            successful: true,
-            successful_configuration_hash: instance.configuration_hash,
-            successful_packages_spec: JSON.dump(instance.current_packages)
-          )
-        end
+        # if errand_result && errand_result.exit_code == 0
+        #   errand_run.update(
+        #     successful: true,
+        #     successful_configuration_hash: instance.configuration_hash,
+        #     successful_packages_spec: JSON.dump(instance.current_packages)
+        #   )
+        # end
 
         # Prefer to raise cancel error because
         # it was triggered before trying to fetch logs

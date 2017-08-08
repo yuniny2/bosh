@@ -36,7 +36,6 @@ module Bosh::Director
 
       if rendered_templates_archive_model && rendered_templates_archive_model.content_sha1 == instance.configuration_hash
         if !@blobstore_client.exists?(rendered_templates_archive_model.blobstore_id)
-
           compressed_templates_archive = instance_plan.rendered_templates.persist_on_blobstore(@blobstore_client)
 
           blobstore_id = compressed_templates_archive.blobstore_id
@@ -51,6 +50,9 @@ module Bosh::Director
           archive_sha1 = rendered_templates_archive_model.sha1
         end
       else
+        if rendered_templates_archive_model
+          raise 'hello'
+        end
         compressed_templates_archive = instance_plan.rendered_templates.persist_on_blobstore(@blobstore_client)
 
         blobstore_id = compressed_templates_archive.blobstore_id
