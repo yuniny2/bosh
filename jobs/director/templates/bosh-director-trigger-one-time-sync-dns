@@ -1,0 +1,7 @@
+#!/bin/bash
+
+export PATH=/var/vcap/packages/ruby/bin:$PATH
+export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
+export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.3.0
+
+exec /var/vcap/packages/director/bin/bosh-director-trigger-one-time-sync-dns

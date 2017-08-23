@@ -2,7 +2,7 @@
 name: blobstore
 
 templates:
-  nginx_ctl:          bin/nginx_ctl
+  bpm/blobstore.yml:  config/bpm/blobstore.yml
   nginx.conf.erb:     config/nginx.conf
   blobstore.conf.erb: config/sites/blobstore.conf
   mime.types:         config/mime.types

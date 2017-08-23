@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# todo all this stuff...
+
 export PATH=/var/vcap/packages/ruby/bin:$PATH
 
 export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.3.0
@@ -11,10 +13,8 @@ mkdir -p $LOG_DIR
 
 default_wait_time=15
 
-stop_workers()
-{
-  for pid_file in "$RUN_DIR"/worker_*.pid
-  do
+stop_workers() {
+  for pid_file in /var/vcap/sys/run/bpm/director/worker_*.pid; do
     if [ -f "$pid_file" ] ; then
       worker_pid=`cat ${pid_file}`
       # Stop DJ workers from accepting any new jobs
@@ -25,12 +25,15 @@ stop_workers()
 
 stop_workers
 
-COMPONENT=drain erb /var/vcap/jobs/director/config/director.yml.erb > /var/vcap/jobs/director/config/drain.yml
-
-num_workers=`/var/vcap/packages/director/bin/bosh-director-drain-workers -r -c /var/vcap/jobs/director/config/drain.yml 2>>$LOG_DIR/drain.stderr.log`
+num_workers=`/var/vcap/packages/director/bin/bosh-director-drain-workers -r -c /var/vcap/jobs/director/config/director.yml 2>>$LOG_DIR/drain.stderr.log`
 
 if ([ $? != 0 ] || [ $num_workers -eq 0 ]); then
   echo 0
 else
   echo -$default_wait_time
 fi
+
+# todo
+<% if p('blobstore.provider') == "s3" %>
+rm -f $TMPDIR/s3_blobstore_config*
+<% end %>

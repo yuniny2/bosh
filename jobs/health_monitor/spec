@@ -2,7 +2,7 @@
 name: health_monitor
 
 templates:
-  health_monitor_ctl.erb: bin/health_monitor_ctl
+  bpm.yml: config/bpm/health_monitor.yml
   health_monitor.yml.erb: config/health_monitor.yml
   uaa.pem.erb: config/uaa.pem
 

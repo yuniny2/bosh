@@ -2,6 +2,7 @@
 name: postgres-9.4
 
 templates:
+  bpm.yml: config/bpm/postgres-9.4.yml
   postgres_ctl.erb:  bin/postgres_ctl
   postgres_db_backup.sh.erb: bin/postgres_db_backup.sh
   postgres_db_upgrade.sh.erb: bin/postgres_db_upgrade.sh

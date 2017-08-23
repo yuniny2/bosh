@@ -8,7 +8,22 @@ CONFIG_DIR=/var/vcap/jobs/director/config
 mkdir -p $STORE_DIR
 chown -R vcap:vcap $STORE_DIR
 
+# todo whats going on?
 chmod -R 0640 $CONFIG_DIR
 find $CONFIG_DIR -type d | xargs -n1 chmod 0750
 
 chown -R root:vcap $CONFIG_DIR
+
+# todo whats going on
+cp /var/vcap/jobs/director/config/sudoers /etc/sudoers.d/director
+chmod 440 /etc/sudoers.d/director
+
+# if we encounter a problem after adding the sudoers file, back it out and abort
+visudo -c
+if [ $? -ne 0 ]; then
+  rm /etc/sudoers.d/director
+  echo "ERROR: could not configure sudoers"
+  exit 1
+fi
+
+(crontab -l | sed /task_logrotate/d; cat /var/vcap/jobs/director/config/task_logrotate.cron) | sed /^$/d | crontab

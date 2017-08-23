@@ -3,9 +3,8 @@ name: director
 
 templates:
   pre-start.erb: bin/pre-start
-  director_ctl.erb: bin/director_ctl
+  bosh-director: bin/bosh-director
   director.yml.erb.erb: config/director.yml.erb
-  worker_ctl.erb: bin/worker_ctl
   ps_utils.sh: bin/ps_utils.sh
   drain: bin/drain
   sudoers: config/sudoers
@@ -16,12 +15,9 @@ templates:
   director.pem.erb: config/ssl/director.pem
   director.key.erb: config/ssl/director.key
   nginx.conf.erb: config/nginx.conf
-  nginx_ctl: bin/nginx_ctl
   mime.types: config/mime.types
-  scheduler_ctl.erb: bin/scheduler_ctl
   config_server_ca.cert.erb: config/config_server_ca.cert
   uaa_server_ca.cert.erb: config/uaa_server_ca.cert
-  sync_dns_ctl.erb: bin/sync_dns_ctl
   bbr_backup: bin/bbr/backup
   bbr_restore: bin/bbr/restore
 

@@ -2,8 +2,9 @@
 name: registry
 
 templates:
+  bpm.yml: config/bpm/registry.yml
+  bosh-registry: bin/bosh-registry
   cacert.pem.erb:   config/cacert.pem
-  registry_ctl.erb: bin/registry_ctl
   registry.yml.erb: config/registry.yml
 
 packages:

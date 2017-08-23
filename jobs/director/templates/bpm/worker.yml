@@ -1,0 +1,30 @@
+executable: /var/vcap/packages/director/bin/bosh-director-worker
+
+args:
+- -c=/var/vcap/jobs/director/config/director.yml # todo -i $INDEX
+- -i=1
+
+env:
+<% if_p('env.http_proxy') do |http_proxy| %>
+- HTTP_PROXY=<%= http_proxy %>
+- http_proxy=<%= http_proxy %>
+<% end %>
+<% if_p('env.https_proxy') do |https_proxy| %>
+- HTTPS_PROXY=<%= https_proxy %>
+- https_proxy=<%= https_proxy %>
+<% end %>
+<% if_p('env.no_proxy') do |no_proxy| %>
+- NO_PROXY=<%= no_proxy %>
+- no_proxy=<%= no_proxy %>
+<% end %>
+- BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
+- GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.3.0
+- PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/var/vcap/packages/postgres-9.4/bin:/var/vcap/packages/postgres/bin:/var/vcap/packages/ruby/bin:/var/vcap/packages/mysql/bin
+- LD_LIBRARY_PATH=/var/vcap/packages/libpq/lib:/var/vcap/packages/mysql/lib/mysql
+- QUEUE=normal,urgent
+
+# todo <% if (p('director.enable_dedicated_status_worker')) && (p('director.workers') > 1) %>
+# if [ $INDEX -eq 1 ]; then
+#   export QUEUE="urgent"
+# fi
+# <% end %>

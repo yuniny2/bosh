@@ -1,0 +1,13 @@
+executable: bundle exec nats-server
+
+args:
+- -c=/var/vcap/jobs/nats/config/nats.yml
+
+env:
+- BUNDLE_GEMFILE=/var/vcap/packages/nats/Gemfile
+- GEM_HOME=/var/vcap/packages/nats/gem_home/ruby/2.3.0 # todo?
+- PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/var/vcap/packages/ruby/bin:/var/vcap/packages/nats/bin
+
+limits:
+  open_files: 65536
+  memory: 3000M

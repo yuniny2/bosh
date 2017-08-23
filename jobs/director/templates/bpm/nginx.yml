@@ -1,0 +1,8 @@
+---
+executable: /var/vcap/packages/nginx/sbin/nginx
+
+args:
+- -c=/var/vcap/jobs/director/config/nginx.conf
+
+# todo workaround. nginx upload module ignores the proxy_temp_path directive
+# ln -fs $TMP_DIR/proxy /var/vcap/packages/nginx/proxy_temp

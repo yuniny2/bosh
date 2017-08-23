@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -ex
+
+sysctl -w net.ipv4.neigh.default.gc_thresh3=4096
+sysctl -w net.ipv4.neigh.default.gc_thresh2=2048
+
+# In case VM is restarted
+cat > /etc/sysctl.d/100-bosh-nats.conf <<EOF
+net.ipv4.neigh.default.gc_thresh3=4096
+net.ipv4.neigh.default.gc_thresh2=2048
+EOF

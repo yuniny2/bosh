@@ -1,0 +1,21 @@
+executable: /var/vcap/packages/health_monitor/bin/bosh-monitor
+
+args:
+- -c=/var/vcap/jobs/health_monitor/config/health_monitor.yml
+
+env:
+<% if_p('env.http_proxy') do |http_proxy| %>
+- HTTP_PROXY=<%= http_proxy %>
+- http_proxy=<%= http_proxy %>
+<% end %>
+<% if_p('env.https_proxy') do |https_proxy| %>
+- HTTPS_PROXY=<%= https_proxy %>
+- https_proxy=<%= https_proxy %>
+<% end %>
+<% if_p('env.no_proxy') do |no_proxy| %>
+- NO_PROXY=<%= no_proxy %>
+- no_proxy=<%= no_proxy %>
+<% end %>
+- BUNDLE_GEMFILE=/var/vcap/packages/health_monitor/Gemfile
+- GEM_HOME=/var/vcap/packages/health_monitor/gem_home/ruby/2.3.0
+- PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/var/vcap/packages/ruby/bin

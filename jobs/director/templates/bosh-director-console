@@ -1,0 +1,12 @@
+#!/bin/bash
+
+export PATH=/var/vcap/packages/ruby/bin:$PATH
+export BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
+export GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.3.0
+
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/var/vcap/packages/postgres-9.4/bin:/var/vcap/packages/postgres/bin:/var/vcap/packages/ruby/bin:/var/vcap/packages/mysql/bin
+export LD_LIBRARY_PATH=/var/vcap/packages/libpq/lib:/var/vcap/packages/mysql/lib/mysql
+export LIBRARY_PATH=/var/vcap/packages/sqlite/lib:/var/vcap/packages/libpq/lib:/var/vcap/packages/mysqlclient/lib
+export C_INCLUDE_PATH=/var/vcap/packages/sqlite/include:/var/vcap/packages/libpq/include
+
+exec /var/vcap/packages/director/bin/bosh-director-console -c /var/vcap/jobs/director/config/director.yml

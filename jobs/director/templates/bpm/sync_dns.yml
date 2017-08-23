@@ -1,0 +1,20 @@
+executable: /var/vcap/packages/director/bin/bosh-director-sync-dns
+
+args:
+- -c=/var/vcap/jobs/director/config/director.yml
+
+env:
+<% if_p('env.http_proxy') do |http_proxy| %>
+- HTTP_PROXY=<%= http_proxy %>
+- http_proxy=<%= http_proxy %>
+<% end %>
+<% if_p('env.https_proxy') do |https_proxy| %>
+- HTTPS_PROXY=<%= https_proxy %>
+- https_proxy=<%= https_proxy %>
+<% end %>
+<% if_p('env.no_proxy') do |no_proxy| %>
+- NO_PROXY=<%= no_proxy %>
+- no_proxy=<%= no_proxy %>
+<% end %>
+- BUNDLE_GEMFILE=/var/vcap/packages/director/Gemfile
+- GEM_HOME=/var/vcap/packages/director/gem_home/ruby/2.3.0

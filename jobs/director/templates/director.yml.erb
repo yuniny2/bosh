@@ -11,7 +11,7 @@ params = {
   'max_threads' => p('director.max_threads'),
   'logging' => {
     'level' => 'DEBUG',
-    'file' =>  "/var/vcap/sys/log/director/<" + "%= ENV['COMPONENT'] %" + ">.debug.log"
+    'file' =>  "/dev/stdout" # todo ok?
   },
   'mbus' => "nats://#{p('nats.user')}:#{p('nats.password')}@#{p('nats.address')}:#{p('nats.port')}",
   'dir' => '/var/vcap/store/director',
