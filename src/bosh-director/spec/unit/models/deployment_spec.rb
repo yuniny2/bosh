@@ -6,8 +6,7 @@ module Bosh::Director::Models
     subject(:deployment) { described_class.make(manifest: manifest, name: 'dep1') }
 
     describe '#tags' do
-
-      context 'when manifest is nil' do
+      context 'when manifest and runtime-configs is empty' do
         let(:manifest) { nil }
 
         it 'returns empty list' do
@@ -15,9 +14,99 @@ module Bosh::Director::Models
         end
       end
 
-      context 'when manifest is not nil' do
+      context 'when manifest is not nil but runtime-configs is empty' do
+        let(:runtime_config) { nil }
+        context 'when manifest tags are present' do
 
-        context 'when tags are present' do
+          let(:mock_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
+          let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
+
+          before do
+            allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(mock_client_factory)
+            allow(mock_client_factory).to receive(:create_client).and_return(mock_client)
+            allow(mock_client).to receive(:interpolate_with_versioning).and_return(interpolated_tags)
+          end
+
+          context 'when manifest tags do NOT use variables' do
+            let(:manifest) { <<-HERE }
+---
+tags:
+  tag1: value1
+  tag2: value2
+            HERE
+
+            let(:interpolated_tags) do
+              {
+                'tag1' => 'value1',
+                'tag2' => 'value2'
+              }
+            end
+
+            it 'returns the tags in deployment manifest' do
+              expect(deployment.tags).to eq({
+                'tag1' => 'value1',
+                'tag2' => 'value2',
+              })
+            end
+          end
+
+          context 'when manifest tags use variables' do
+            let(:manifest) { <<-HERE }
+---
+tags:
+  tagA: ((tag-var1))
+  tagO: ((/tag-var2))
+            HERE
+
+            let(:tags) do
+              {
+                'tagA' => '((tag-var1))',
+                'tagO'=> '((/tag-var2))'
+              }
+            end
+
+            let(:interpolated_tags) do
+              {
+                'tagA' => 'apples',
+                'tagO' => 'oranges'
+              }
+            end
+
+            before do
+              VariableSet.make(id: 1, deployment: deployment)
+            end
+
+            it 'substitutes the variables in the tags section' do
+              expect(mock_client).to receive(:interpolate_with_versioning).with(tags, deployment.current_variable_set).and_return(interpolated_tags)
+              expect(deployment.tags).to eq(interpolated_tags)
+            end
+          end
+        end
+
+        context 'when manifest tags are NOT present' do
+          let(:manifest) { '---{}' }
+
+          it 'returns empty list' do
+            expect(deployment.tags).to eq({})
+          end
+        end
+      end
+      context 'when manifest is not nil and runtime-configs are not empty' do
+        let(:runtime_config) { RuntimeConfig.make(raw_manifest: raw_manifest) }
+
+        before(:each) do
+          deployment.add_runtime_config(runtime_config)
+        end
+
+        context 'when manifest tags are present and runtime-config tags are present' do
+          let(:raw_manifest) {
+            {
+              'tags' => {
+                'rc1' => 'value1',
+                'rc2' => 'value2'
+              }
+            }
+          }
 
           let(:mock_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
           let(:mock_client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
@@ -84,7 +173,7 @@ tags:
           end
         end
 
-        context 'when tags are NOT present' do
+        context 'when manifest tags are NOT present' do
           let(:manifest) { '---{}' }
 
           it 'returns empty list' do
