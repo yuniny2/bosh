@@ -24,7 +24,11 @@ describe 'deploy job with addons', type: :integration do
 
       # deploy Deployment1
       manifest_hash['name'] = 'dep1'
-      deploy_simple_manifest(manifest_hash: manifest_hash)
+      begin
+        deploy_simple_manifest(manifest_hash: manifest_hash)
+      ensure
+        puts "hhh"
+      end
 
       foobar_instance = director.instance('foobar', '0', deployment_name: 'dep1')
 

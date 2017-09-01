@@ -38,7 +38,7 @@ namespace :fly do
     task_names = groups.each_with_index.map do |group, index|
       name = "integration_#{index + 1}"
       task name do
-        execute('test-integration-gocli', '-p --inputs-from=bosh/integration-postgres-gocli-sha2', {
+        execute('test-integration-gocli', '-p --inputs-from=bosh/integration-postgres-gocli-sha2 --input=bosh-cli=/tmp/bosh-cli', {
             DB: (ENV['DB'] || 'postgresql'),
             SPEC_PATH: (ENV['SPEC_PATH'] || nil),
             GROUP: group,
@@ -51,6 +51,32 @@ namespace :fly do
     multitask _parallel_integration: task_names
     Rake::MultiTask[:_parallel_integration].invoke
   end
+
+  task :integration_gocli_mysql_parallel do
+
+    num_workers = 3
+    num_groups = 24
+
+    groups = (1..num_groups).group_by { |i| i%num_workers }.values
+      .map { |group_values| group_values.join(',') }
+
+    task_names = groups.each_with_index.map do |group, index|
+      name = "integration_#{index + 1}"
+      task name do
+        execute('test-integration-gocli', '-p --inputs-from=bosh/integration-mysql-gocli-sha1 --input=bosh-cli=/tmp/bosh-cli', {
+          DB: ('mysql'),
+          SPEC_PATH: (ENV['SPEC_PATH'] || nil),
+          GROUP: group,
+          NUM_GROUPS: num_groups
+        })
+      end
+      name
+    end
+
+    multitask _parallel_integration: task_names
+    Rake::MultiTask[:_parallel_integration].invoke
+  end
+
 
   private
 

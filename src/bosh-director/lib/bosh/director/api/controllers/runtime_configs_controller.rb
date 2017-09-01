@@ -4,7 +4,7 @@ module Bosh::Director
   module Api::Controllers
     class RuntimeConfigsController < BaseController
       post '/', :consumes => :yaml do
-        config_name = params['name'].nil? ? '' : params['name']
+        config_name = params['name'].nil? || params['name'].empty? ? 'default' : params['name']
         manifest_text = request.body.read
         begin
           validate_manifest_yml(manifest_text, nil)
@@ -50,14 +50,14 @@ module Bosh::Director
           return
         end
 
-        config_name = params['name'].nil? ? '' : params['name']
+        config_name = params['name'].nil? ? 'default' : params['name']
 
         runtime_configs = Bosh::Director::Api::RuntimeConfigManager.new.list(limit, config_name)
 
         json_encode(
             runtime_configs.map do |runtime_config|
             {
-              'properties' => runtime_config.properties,
+              'properties' => runtime_config.content,
               'created_at' => runtime_config.created_at,
             }
         end
@@ -67,8 +67,8 @@ module Bosh::Director
       private
 
       def runtime_config_by_name(name)
-        config_name = name.nil? ? '' : name
-        Bosh::Director::Models::RuntimeConfig.latest_set.find do |runtime_config|
+        config_name = name.nil? || name.empty? ? 'default' : name
+        Bosh::Director::Models::Config.latest_set('runtime').find do |runtime_config|
           runtime_config.name == config_name
         end
       end
