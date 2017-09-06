@@ -7,8 +7,16 @@ Sequel.migration do
       unique [:deployment_id, :config_id], :name => :deployment_id_config_id_unique
     end
 
+    default_uuid = SecureRandom.uuid
+
     self[:runtime_configs].each do |runtime_config|
-      name = runtime_config[:name].empty? ? 'default' : runtime_config[:name]
+      name = if runtime_config[:name].empty?
+        'default'
+      elsif runtime_config[:name] == 'default'
+        "default-#{default_uuid}"
+      else
+        runtime_config[:name]
+      end
       config_id = self[:configs].insert({
         type: 'runtime',
         name: name,

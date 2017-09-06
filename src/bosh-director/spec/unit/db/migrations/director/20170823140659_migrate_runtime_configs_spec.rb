@@ -25,6 +25,27 @@ module Bosh::Director
       expect(deployment_runtime[:config_id]).to be 1
     end
 
+    # it 'migrates all other runtime configs even if one runtime config migration fails' do
+    #   db[:deployments] << { name: 'fake-name'}
+    #   db[:runtime_configs] << { properties: 'old content with name', name: 'old_name', created_at: some_time }
+    #   db[:deployments_runtime_configs] << { deployment_id: 1, runtime_config_id: 1 }
+    #   db[:runtime_configs] << { properties: 'old content2 with name', name: 'old_name2', created_at: some_time }
+    #   db[:deployments_runtime_configs] << { deployment_id: 1, runtime_config_id: 2 }
+    #   c1 = double('config1')
+    #   c2 = double('config2')
+    #   # allow_any_instance_of(Sequel::SQLite::Dataset).to receive(:each).and_return([c1, c2])
+    #   allow_any_instance_of(Sequel::SQLite::Dataset).to receive(:insert).and_return(c1, c2)
+    #   # allow(c1).to receive(:[])
+    #   # puts 'la'
+    #
+    #   DBSpecHelper.migrate(migration_file)
+    #
+    #   deployment_runtime = db[:deployments_configs].first
+    #   expect(deployment_runtime).to be
+    #   expect(deployment_runtime[:deployment_id]).to be 1
+    #   expect(deployment_runtime[:config_id]).to be 1
+    # end
+
     context 'without name' do
       it "copies 'runtime_configs' data into 'configs' table and updates 'deployments_configs' table" do
         db[:deployments] << { id: 2, name: 'fake-name'}
@@ -44,7 +65,6 @@ module Bosh::Director
           created_at: some_time
         })
       end
-
     end
 
     context 'with name' do
@@ -66,6 +86,24 @@ module Bosh::Director
         })
       end
 
+      it "'default' gets renamed to 'default-<UUID>'" do
+        allow(SecureRandom).to receive(:uuid).and_return('fakeUUID')
+        db[:deployments] << { name: 'fake-name'}
+        db[:runtime_configs] << { properties: 'old content with name', name: 'default', created_at: some_time }
+        db[:deployments_runtime_configs] << { deployment_id: 1, runtime_config_id: 1 }
+
+        DBSpecHelper.migrate(migration_file)
+
+        deployment_runtime_with_name = db[:deployments_configs].first
+        expect(deployment_runtime_with_name[:config_id]).to be
+        new_config_with_name = db[:configs].where(id: deployment_runtime_with_name[:config_id]).first
+        expect(new_config_with_name).to include({
+          type: 'runtime',
+          name: 'default-fakeUUID',
+          content: 'old content with name',
+          created_at: some_time
+        })
+      end
     end
 
     it "drops 'deployments_runtime_config' table" do

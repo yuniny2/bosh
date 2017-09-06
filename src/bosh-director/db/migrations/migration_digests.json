@@ -121,5 +121,6 @@
   "20170815175515_change_variable_ids_to_bigint": "0488ede3a8d8611f8414e6a9c4f54ec9828a3bff",
   "20170821141953_remove_unused_credentials_json_columns": "0daf4d1363029304fc84d0df7b7b69fa04713e37",
   "20170821144941_add_configs": "04348263d89a61dd1078c9ee4a2c94da5a1ff012",
-  "20170823140659_migrate_runtime_configs": "9067c61d49a658b4b1b19b4535b296579786ebe2"
+  "20170823140659_migrate_runtime_configs": "9067c61d49a658b4b1b19b4535b296579786ebe2",
+  "20170904131532_migrate_cloud_configs": "dc139aeb7dd991b0659c39b61cf81185ae5a98d3"
 }
