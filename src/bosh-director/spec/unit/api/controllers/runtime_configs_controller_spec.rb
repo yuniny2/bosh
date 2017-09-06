@@ -74,7 +74,7 @@ module Bosh::Director
 
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body)['diff']).to eq([])
-            expect(JSON.parse(last_response.body)['error']).to include('Unable to diff manifest')
+            expect(JSON.parse(last_response.body)['error']).to include('Unable to diff runtime-config')
           end
         end
 
