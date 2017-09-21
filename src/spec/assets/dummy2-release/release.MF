@@ -1,0 +1,51 @@
+---
+packages:
+- name: bad_package
+  version: 0.1-dev
+  sha1: !binary |-
+    YWZlZTg2OTNiODYxYmNkNjM4MjBjOTE5OTllNTQwZjdkZTRiMjliZA==
+  fingerprint: !binary |-
+    ZTQ0ZDZlNzZhM2NiNzRiZmRhMGVjNmQ1NmRmYmIzMzRjYTc5ODIwOQ==
+  dependencies: []
+- name: dummy_package
+  version: 0.1-dev
+  sha1: !binary |-
+    NmExYjY2ZTE2YzNhODRiNDQ4ZjBmNTMxOGI2YzhhYzY4MGZiMDE2NQ==
+  fingerprint: !binary |-
+    YTI5YjNiMTE3NGRjMjAwODI2MDU1NzMyMDgyYmYyMWM3YTc2NTY2OQ==
+  dependencies: []
+jobs:
+- name: dummy
+  version: 0.1-dev
+  fingerprint: !binary |-
+    YTJmNTAxZDA3YzNlOTY2ODkxODVlZTZlYmUyNmMxNWQ1NGQ0ODQ5YQ==
+  sha1: !binary |-
+    Yjk4MGU4MGViNDUzMTljMTliNTI1Njk5YWY3ZGFlNzg5MDdkNGRhNA==
+- name: dummy_with_bad_package
+  version: 0.1-dev
+  fingerprint: !binary |-
+    MGM1ZmE2YWI1NWFiOWQwMzAzNTRhMjZjNzIyZmUzYjZlODNhNzc1Yg==
+  sha1: !binary |-
+    YjY5YzM1NGQxZGEwNjgzZjYyNmExNDJmOTIyMjQyMTlmZGE1Mjk1YQ==
+- name: dummy_with_package
+  version: 0.1-dev
+  fingerprint: !binary |-
+    OTdhNzAyNjczZjMwOTZhODI1MTI3M2NkNzk2MmFlMzljMGY2M2I3Yg==
+  sha1: !binary |-
+    M2M1NjAxOTMyNjY2MDQ0NDViMTEzY2E1NzBiMTgxNzU2YTkyM2RmOA==
+- name: dummy_with_properties
+  version: 0.1-dev
+  fingerprint: !binary |-
+    YzU1ZTY4MmJlODc4MTJkMGNiMzc4YzgyMTUwZDYxOWMwYjkyNTJlOQ==
+  sha1: !binary |-
+    MmYwMDBjNTMzNTI2MjI1MmQwZTM1ZDNmZGI4ZTJmMjE2OTEwYjNmNQ==
+- name: template2
+  version: 0.1-dev
+  fingerprint: !binary |-
+    NjJhYjBiMzkzZDc5YTQ2OTdkMmE3MDM0OGM5Yzc1MjYwYWYyM2U5MQ==
+  sha1: !binary |-
+    ZWYwNmUyYWEzMDViZDE2ZjEzMDdmZGRmOGI2Y2Q5YWMwY2M0OWM2MQ==
+commit_hash: 05d42922
+uncommitted_changes: true
+name: dummy2
+version: 0.2-dev

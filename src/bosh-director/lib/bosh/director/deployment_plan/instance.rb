@@ -312,6 +312,11 @@ module Bosh::Director
         end
       end
 
+      def update_vm_cloud_properties(vm_cloud_properties)
+        @merged_cloud_properties ||= {}
+        @merged_cloud_properties.merge!(vm_cloud_properties)
+      end
+
       private
       # Looks up instance model in DB
       # @return [Models::Instance]

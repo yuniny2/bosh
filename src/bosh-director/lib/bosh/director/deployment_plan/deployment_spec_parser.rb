@@ -104,6 +104,16 @@ module Bosh::Director
           # get state specific for this job or all jobs
           state_overrides = @job_states.fetch(job_spec['name'], @job_states.fetch('*', {}))
           job_spec = job_spec.recursive_merge(state_overrides)
+
+          if job_spec['vm_type'].nil?
+            if job_spec['vm'].nil?
+              raise Error, 'Either vm_type or vm block has to be present'
+            else
+            #   calculate_cloud_properties
+            #   change job_spec to include vm_type => not possible because vm_type refers to a vm_type defined in cloud_config
+            end
+          end
+
           @deployment.add_instance_group(InstanceGroup.parse(@deployment, job_spec, @event_log, @logger, parse_options))
         end
       end

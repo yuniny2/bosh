@@ -51,10 +51,12 @@ module Bosh::Director
 
       job_migrator = Bosh::Director::DeploymentPlan::JobMigrator.new(@deployment_plan, @logger)
 
+      vm_cloud_properties_cache = {}
       desired_instance_groups.each do |desired_instance_group|
         desired_instances = desired_instance_group.desired_instances
         existing_instances = job_migrator.find_existing_instances(desired_instance_group)
         instance_plans = instance_planner.plan_instance_group_instances(desired_instance_group, desired_instances, existing_instances)
+        update_instance_cloud_properties(vm_cloud_properties_cache, instance_plans, desired_instance_group.vm) if desired_instance_group.vm
         desired_instance_group.add_instance_plans(instance_plans)
       end
 
@@ -71,6 +73,19 @@ module Bosh::Director
     end
 
     private
+
+    def update_instance_cloud_properties(vm_cloud_properties_cache, instance_plans, vm_requirements)
+      cloud_factory = CloudFactory.create_with_latest_configs(@deployment_plan.model)
+
+      instance_plans.each do |instance_plan|
+        cpi_name = cloud_factory.get_name_for_az(instance_plan.instance.availability_zone)
+        if vm_cloud_properties_cache[{cpi_name => vm_requirements}].nil?
+          vm_cloud_properties = cloud_factory.get(cpi_name).calculate_vm_cloud_properties(vm_requirements)
+          vm_cloud_properties_cache[{cpi_name => vm_requirements}] = vm_cloud_properties
+        end
+        instance_plan.instance.update_vm_cloud_properties(vm_cloud_properties_cache[{cpi_name => vm_requirements}])
+      end
+    end
 
     def bind_new_variable_set
       current_variable_set = @deployment_plan.model.current_variable_set

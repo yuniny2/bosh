@@ -250,6 +250,19 @@ module Bosh
         validate_and_record_inputs(SET_DISK_METADATA_SCHEMA, __method__, disk_cid, metadata)
       end
 
+      CALCULATE_VM_CLOUD_PROPERTIES_SCHEMA = Membrane::SchemaParser.parse { { vm_requirements: {'ram' => Integer, 'cpu' => Integer, 'ephemeral_disk' => Integer} } }
+      def calculate_vm_cloud_properties(vm_requirements)
+        validate_and_record_inputs(
+          CALCULATE_VM_CLOUD_PROPERTIES_SCHEMA,
+          __method__,
+          vm_requirements
+        )
+        {
+          instance_type: 'dummy',
+          ephemeral_disk: { size: 1024 }
+        }
+      end
+
       # Additional Dummy test helpers
 
       def prepare
