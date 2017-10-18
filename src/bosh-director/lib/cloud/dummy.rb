@@ -11,9 +11,11 @@ module Bosh
       class NotImplemented < StandardError; end
 
       attr_reader :commands
+      attr_accessor :options
 
       def initialize(options, context)
         @options = options
+
 
         @base_dir = options['dir']
         if @base_dir.nil?
@@ -383,6 +385,7 @@ module Bosh
           sleep 0.1
           Process.getpgid(agent_pid)
         rescue => e
+          sleep 6000
           raise RuntimeError, "Expected agent to be running: #{e}"
         end
 
