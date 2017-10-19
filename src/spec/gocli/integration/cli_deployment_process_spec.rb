@@ -51,7 +51,7 @@ describe 'cli: deployment process', type: :integration do
     context 'given two deployments from one release' do
       it 'is successful' do
         release_filename = spec_asset('test_release.tgz')
-        minimal_manifest = Bosh::Spec::NewDeployments.minimal_manifest_with_stemcell
+        minimal_manifest = Bosh::Spec::NewDeployments.minimal_manifest
         deployment_manifest = yaml_file('minimal_deployment', minimal_manifest)
 
         cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
