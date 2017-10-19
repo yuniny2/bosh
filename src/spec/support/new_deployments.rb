@@ -257,12 +257,6 @@ module Bosh::Spec
       })
     end
 
-    def self.simple_v2_manifest_with_stemcell
-      test_release_manifest_with_stemcell.merge({
-        'instance_groups' => [simple_instance_group]
-      })
-    end
-
     def self.simple_manifest_with_stemcell
       test_release_manifest_with_stemcell.merge({
         'jobs' => [simple_job]
