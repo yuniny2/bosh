@@ -339,9 +339,9 @@ module Bosh::Dev::Sandbox
       @nats_allow_legacy_clients = allow_legacy_clients
 
       if @nats_allow_legacy_clients
-        @nats_url = "nats://#{@nats_user}:#{@nats_password}@localhost:#{nats_port}"
+        @nats_url = "nats://#{@nats_user}:#{@nats_password}@127.0.0.1:#{nats_port}"
       else
-        @nats_url = "nats://localhost:#{nats_port}"
+        @nats_url = "nats://127.0.0.1:#{nats_port}"
       end
 
       @cpi.options['nats'] = @nats_url
@@ -378,7 +378,7 @@ module Bosh::Dev::Sandbox
 
     def director_nats_config
       {
-        uri: "nats://localhost:#{nats_port}",
+        uri: "nats://127.0.0.1:#{nats_port}",
         ssl: true,
         tls: {
           :private_key_file => nats_certificate_paths['clients']['test_client']['private_key_path'],

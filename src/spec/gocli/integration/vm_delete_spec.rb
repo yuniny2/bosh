@@ -28,9 +28,35 @@ describe 'vm delete', type: :integration do
   end
 
   context 'when bosh has not deployed the vm' do
+    let(:ca_cert) {
+      File.read(current_sandbox.nats_certificate_paths['ca_path'])
+    }
+
+    let(:client_cert) {
+      File.read(current_sandbox.nats_certificate_paths['clients']['test_client']['certificate_path'])
+    }
+
+    let(:client_priv_key) {
+      File.read(current_sandbox.nats_certificate_paths['clients']['test_client']['private_key_path'])
+    }
+
+    let(:env) do
+      {
+          'bosh' => {
+              'mbus' => {
+                  'cert' => {
+                      'ca' => ca_cert,
+                      'certificate' =>  client_cert,
+                      'private_key' => client_priv_key
+                  }
+              }
+          }
+      }
+    end
+
     it 'deletes the vm by its vm_cid' do
       network ={'a' => {'ip' => '192.168.1.5', 'type' => 'dynamic'}}
-      id = current_sandbox.cpi.create_vm(SecureRandom.uuid, current_sandbox.cpi.latest_stemcell['id'], {}, network, [], {})
+      id = current_sandbox.cpi.create_vm(SecureRandom.uuid, current_sandbox.cpi.latest_stemcell['id'], {}, network, [], env)
 
       expect(current_sandbox.cpi.has_vm(id)).to be_truthy
       bosh_runner.run("delete-vm #{id}", deployment_name: 'simple')

@@ -385,7 +385,6 @@ module Bosh
           sleep 0.1
           Process.getpgid(agent_pid)
         rescue => e
-          sleep 6000
           raise RuntimeError, "Expected agent to be running: #{e}"
         end
 
