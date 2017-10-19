@@ -32,6 +32,12 @@ puma_configuration = Puma::Configuration.new do |user_config|
   user_config.bind 'tcp://127.0.0.1'
   user_config.port config.port
   user_config.app rack_app
+  user_config.before_fork do
+    Bosh::Director::Config.db.disconnect
+  end
+  user_config.on_worker_boot do
+    Bosh::Director::Config.load_file(config_file)
+  end
 end
 puma_launcher = Puma::Launcher.new(puma_configuration)
 
