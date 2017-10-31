@@ -18,6 +18,7 @@ case "$DB" in
     sudo service mysql start
     ;;
   postgresql)
+    export PATH=/usr/lib/postgresql/9.4/bin:$PATH
     export PG_DIR=/tmp/postgres
     mkdir $PG_DIR
     mount -t tmpfs -o size=512M tmpfs $PG_DIR
