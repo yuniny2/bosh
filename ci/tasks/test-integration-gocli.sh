@@ -18,22 +18,19 @@ case "$DB" in
     sudo service mysql start
     ;;
   postgresql)
-    export PATH=/usr/lib/postgresql/9.4/bin:$PATH
-
-    mkdir /tmp/postgres
-    mount -t tmpfs -o size=512M tmpfs /tmp/postgres
+    export PG_DIR=/tmp/postgres
+    mkdir $PG_DIR
+    mount -t tmpfs -o size=512M tmpfs $PG_DIR
     mkdir /tmp/postgres/data
     chown postgres:postgres /tmp/postgres/data
 
-    su postgres -c '
-      export PATH=/usr/lib/postgresql/9.4/bin:$PATH
-      export PGDATA=/tmp/postgres/data
-      export PGLOGS=/tmp/log/postgres
-      mkdir -p $PGDATA
-      mkdir -p $PGLOGS
-      initdb -U postgres -D $PGDATA
-      pg_ctl start -l $PGLOGS/server.log -o "-N 400"
-    '
+    su postgres -c "
+      export PG_DIR=${PG_DIR}
+      export PATH=/usr/lib/postgresql/9.4/bin:\$PATH
+      source ./bosh-src/dev/postgres_utils.sh
+
+      SOURCE_ROOT=\$(pwd)/bosh-src start_postgres
+    "
     ;;
   *)
     echo "Usage: DB={mysql|postgresql} $0 {commands}"
