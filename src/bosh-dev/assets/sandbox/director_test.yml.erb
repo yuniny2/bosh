@@ -21,23 +21,26 @@ scheduled_jobs:
     schedule: '*/1 * * * * *'
 
 db: &bosh_db
-  adapter: <%= database.adapter %>
-  database: <%= database.db_name %>
+  adapter: <%= database_config.adapter %>
+  database: <%= database_config.name %>
   # Settings are set to defaults since DbBackup
   # currently does not support export without them
   host: 127.0.0.1
-  port: <%= database.port %>
-  user: <%= database.username %>
-  password: <%= database.password %>
+  port: <%= database_config.port %>
+  user: <%= database_config.username %>
+  password: <%= database_config.password %>
 
-  # Failure to set `sslmode` will produce following error
-  # 'PG::Error: SSL error: decryption failed or bad record mac:'
-  sslmode: "disable"
+  <% if database_config.enable_ssl %>
+  tls:
+    enable: <%= database_config.enable_ssl %>
+    cert:
+      ca: <%= database_config.ca_path %>
+  <% end %>
 
   connection_options:
     max_connections: 32
     pool_timeout: 10
-    reconnect: <%= database.adapter == 'mysql2' ? true : false %>
+    reconnect: <%= database_config.adapter == 'mysql2' ? true : false %>
 
 <% if dns_enabled %>
 dns:

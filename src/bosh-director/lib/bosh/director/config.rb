@@ -264,7 +264,20 @@ module Bosh::Director
 
       def configure_db(db_config)
         connection_config = db_config.dup
-        connection_options = connection_config.delete('connection_options') {{}}
+        connection_options = connection_config.delete('connection_options') { {} }
+
+        # Convert generic security settings to mysql/postgres format
+        tls_options = connection_config.delete('tls') { {} }
+        tls_enabled = tls_options.fetch('enable', false)
+        if tls_enabled
+          connection_config['sslmode'] = 'verify-ca'
+
+          certificate_paths = tls_options.fetch('cert', {})
+          connection_config['sslrootcert'] = certificate_paths.fetch('ca', '')
+        else
+          connection_config['sslmode'] = 'disable'
+        end
+
         connection_config.delete_if { |_, v| v.to_s.empty? }
         connection_config = connection_config.merge(connection_options)
 

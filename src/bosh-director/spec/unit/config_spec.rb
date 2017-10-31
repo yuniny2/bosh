@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'sequel/extensions/connection_validator'
 
 #
 # This supplants the config_old_spec.rb behavior. We are
@@ -526,6 +527,72 @@ describe Bosh::Director::Config do
           described_class.configure(test_config)
           expect(described_class.enable_cpi_resize_disk).to be_falsey
         end
+      end
+    end
+  end
+
+  describe '#configure_db' do
+    let(:database) { instance_double(Sequel::Database) }
+    let(:database_pool) { instance_double(Sequel::ConnectionValidator) }
+
+    before do
+      allow(database_pool).to receive(:connection_validation_timeout=)
+      allow(database).to receive(:pool).and_return(database_pool)
+      allow(database).to receive(:extension)
+      allow(database).to receive(:logger=)
+      allow(database).to receive(:sql_log_level=)
+    end
+
+    context 'when db config has empty entries' do
+      it 'prunes empty entries before passing it to sequel' do
+        parameters = {
+          host: '127.0.0.1',
+          port: 5432,
+          nil_value: nil,
+          empty_value: '',
+        }
+
+        expect(Sequel).to receive(:connect).with({host: '127.0.0.1', port: 5432}).and_return(database)
+        described_class.configure_db(parameters)
+      end
+
+      context 'when connection_options is defined' do
+        it 'will add all entries to top level config' do
+          parameters = {
+            'connection_options' => {
+              'host' => '127.0.0.1',
+              'port' => 5432,
+            }
+          }
+
+          expect(Sequel).to receive(:connect).with({'host' => '127.0.0.1', 'port' => 5432}).and_return(database)
+          described_class.configure_db(parameters)
+        end
+      end
+    end
+
+    context 'when TLS is requested' do
+      it 'connects with SSL enabled' do
+        config = {
+          'adapter' => 'postgresql',
+          'host' => '127.0.0.1',
+          'port' => 5432,
+          'connection_options' => {
+            'sslmode' => 'require',
+            'sslrootcert' => '/path/to/root/ca',
+          }
+        }
+
+        connection_parameter = {
+          'adapter' => 'postgresql',
+          'host' => '127.0.0.1',
+          'port' => 5432,
+          'sslmode' => 'require',
+          'sslrootcert' => '/path/to/root/ca',
+        }
+
+        expect(Sequel).to receive(:connect).with(connection_parameter).and_return(database)
+        described_class.configure_db(config)
       end
     end
   end

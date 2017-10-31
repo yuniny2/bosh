@@ -2,18 +2,20 @@ require 'bosh/dev/sandbox/workspace'
 
 module Bosh::Dev::Sandbox
   class ConnectionProxyService
-    def initialize(sandbox_root, forward_to_host, forward_to_port, listen_port, base_log_path, logger)
+    def initialize(config_dir, forward_to_host, forward_to_port, listen_port, base_log_path, logger)
       @logger = logger
       log_path = "#{base_log_path}.tcp_proxy_nginx.out"
+      error_log_path = "#{base_log_path}.tcp_proxy_nginx.error.out"
 
-      config_path = File.join(sandbox_root, 'nginx_tcp_proxy.conf')
+      FileUtils.mkpath config_dir
+      config_path = File.join(config_dir, 'nginx_tcp_proxy.conf')
       nginx = TCPProxyNginx.new
       cmd = %W[#{nginx.executable_path} -c #{config_path}]
       @process = Service.new(cmd, {output: log_path}, logger)
       @socket_connector = SocketConnector.new('tcp_proxy_nginx', 'localhost', listen_port, 'unknown', logger)
 
       attrs = {
-        sandbox_root: sandbox_root,
+        error_log_path: error_log_path,
         nginx_port: listen_port,
         database_port: forward_to_port,
         database_host: forward_to_host,
@@ -65,13 +67,13 @@ module Bosh::Dev::Sandbox
   end
 
   class TCPProxyNginxConfig
-    attr_reader :sandbox_root, :nginx_port, :database_port, :database_host
+    attr_reader :error_log_path, :nginx_port, :database_port, :database_host
 
     def initialize(template, result_path, attrs)
       @template = template
       @result_path = result_path
 
-      @sandbox_root = attrs.fetch(:sandbox_root)
+      @error_log_path = attrs.fetch(:error_log_path)
       @nginx_port = attrs.fetch(:nginx_port)
       @database_port = attrs.fetch(:database_port)
       @database_host = attrs.fetch(:database_host)
