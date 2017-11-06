@@ -26,7 +26,7 @@ case "$DB" in
 
     su postgres -c "
       export PG_DIR=${PG_DIR}
-      export PATH=/usr/lib/postgresql/9.4/bin:$PATH
+      export PATH=/usr/lib/postgresql/9.4/bin:\$PATH
       source ./bosh-src/dev/postgres_utils.sh
 
       SOURCE_ROOT=\$(pwd)/bosh-src start_postgres
