@@ -309,6 +309,7 @@ module Bosh::Director
               )
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
               put "#{path}", manifest, {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => '0'}
+              expect(last_response.status).to eq 302
               match = last_response.location.match(%r{/tasks/no_content_length})
               expect(match).to_not be_nil
             end
@@ -386,10 +387,27 @@ module Bosh::Director
             expect(last_response.status).to eq(302)
           end
 
-          it 'returns a "bad request" if index_or_id parameter of a PUT is neither a number nor a string with uuid format' do
-            deployment
-            put '/foo/jobs/dea/snoopy?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+          it 'returns a "bad request" if index_or_id parameter of a PUT contains invalid characters' do
+            put "/#{deployment.name}/jobs/dea/snoopy?state=stopped", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
             expect(last_response.status).to eq(400)
+          end
+
+          context 'when the index_or_id is formed like a uuid prefix' do
+            let!(:instance) do
+              Models::Instance.create(:deployment => deployment, :job => 'dea',
+                :index => '0', :state => 'started', :uuid => '0B949287-CDED-4761-9002-FC4035E11B21',
+                :variable_set => Models::VariableSet.create(deployment: deployment))
+            end
+
+            it 'returns "not found" if no instance has that prefix' do
+              put "/#{deployment.name}/jobs/dea/1234abcd?state=stopped", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response.status).to eq(404)
+            end
+
+            it 'returns 302 success if an instance does have that prefix' do
+              put "/#{deployment.name}/jobs/dea/#{instance.uuid[0..7]}?state=stopped", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              expect(last_response.status).to eq(302)
+            end
           end
 
           it 'can get job information' do

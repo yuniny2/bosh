@@ -24,12 +24,16 @@ module Bosh::Director
       end
 
       def by_uuid(deployment, job_name, uuid)
-        instance = Models::Instance.find(deployment: deployment, job: job_name, uuid: uuid)
-        if instance.nil?
+        instance = Models::Instance.filter(deployment: deployment, job: job_name, uuid: /^#{uuid}/).all
+        if instance.empty?
           raise InstanceNotFound,
             "'#{deployment.name}/#{job_name}/#{uuid}' doesn't exist"
         end
-        instance
+        if instance.count > 1
+          raise InstanceNotFound,
+            "Ambiguous search: '#{deployment.name}/#{job_name}/#{uuid}' returned multiple results"
+        end
+        instance[0]
       end
 
       def by_filter(filter)

@@ -5,8 +5,8 @@ module Bosh::Director
   module Api
     describe InstanceLookup do
       subject(:instance_lookup) { InstanceLookup.new }
-      let!(:instance) { Models::Instance.make(deployment: deployment, job: job_name, index: job_index) }
-      let!(:another_instance) { Models::Instance.make(deployment: deployment, job: job_name, index: another_job_index) }
+      let!(:instance) { Models::Instance.make(deployment: deployment, job: job_name, index: job_index, uuid: 'abcd1234-guid') }
+      let!(:another_instance) { Models::Instance.make(deployment: deployment, job: job_name, index: another_job_index, uuid: 'fedc1234-guid') }
       let(:deployment) { Models::Deployment.make(name: 'foobar') }
       let(:job_name) { 'my_job' }
       let(:job_index) { '6' }
@@ -45,6 +45,35 @@ module Bosh::Director
           it 'converts the empty string to nil so that postgres will not raise on trying to convert an empty string to integer' do
             expect(Models::Instance).to receive(:find).with(cleansed_filter_attributes).and_return(instance)
             expect { instance_lookup.by_attributes(deployment, '', '') }.to_not raise_error
+          end
+        end
+      end
+
+      describe '.by_uuid' do
+        it 'finds instance based on complete uuid' do
+          expect(instance_lookup.by_uuid(deployment, job_name, instance.uuid)).to eq(instance)
+        end
+
+        it 'finds instance based on uuid prefix' do
+          expect(instance_lookup.by_uuid(deployment, job_name, instance.uuid[0..3])).to eq(instance)
+        end
+
+        context 'no instance exists for uuid or uuid prefix' do
+          it 'raises' do
+            expect {
+              instance_lookup.by_uuid(deployment, job_name, 'zzzzzzzz')
+            }.to raise_error(InstanceNotFound, "'#{deployment.name}/#{job_name}/zzzzzzzz' doesn't exist")
+          end
+        end
+
+        context 'multiple matching uuids for provided prefix' do
+          let!(:third_instance) { Models::Instance.make(deployment: deployment, job: job_name, index: third_job_index, uuid: 'abcd1234-guif') }
+          let(:third_job_index) { '1' }
+
+          it 'raises' do
+            expect {
+              instance_lookup.by_uuid(deployment, job_name, 'abcd')
+            }.to raise_error(InstanceNotFound, "Ambiguous search: '#{deployment.name}/#{job_name}/abcd' returned multiple results")
           end
         end
       end

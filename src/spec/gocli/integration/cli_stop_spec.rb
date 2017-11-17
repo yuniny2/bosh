@@ -22,7 +22,8 @@ describe 'stop command', type: :integration do
     end
 
     context 'with an index or id' do
-      it 'stops the indexed job' do
+      context 'which is formatted like a guid' do
+        it 'stops the indexed job' do
         expect {
           output = bosh_runner.run('stop foobar/0', deployment_name: 'simple')
           expect(output).to match /Updating instance foobar: foobar.* \(0\)/
@@ -68,6 +69,32 @@ describe 'stop command', type: :integration do
           {'id' => /[0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'stop', 'object_type' => 'instance', 'task_id' => /[0-9]{1,3}/, 'object_name' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
           {'id' => /[0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'update', 'object_type' => 'deployment', 'task_id' => /[0-9]{1,3}/, 'object_name' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''}
         )
+        end
+      end
+
+      context 'which is formatted like a substring' do
+        it 'stop the job whose guid begins with the id' do
+          instance_before_with_index_1 = director.instances.find{ |instance| instance.index == '1'}
+          instance_uuid = instance_before_with_index_1.id
+
+          instance_uuid_prefix = instance_uuid[0..10]
+
+          expect {
+            output = bosh_runner.run("stop foobar/#{instance_uuid_prefix}", deployment_name: 'simple')
+            expect(output).to match /Updating instance foobar: foobar.* \(1\)/
+          }.to change { vm_states }.
+            from({
+              'another-job/0' => 'running',
+              'foobar/0' => 'running',
+              'foobar/1' => 'running',
+              'foobar/2' => 'running'
+            }).to({
+                   'another-job/0' => 'running',
+                   'foobar/0' => 'running',
+                   'foobar/1' => 'stopped',
+                   'foobar/2' => 'running'
+            })
+        end
       end
     end
 
