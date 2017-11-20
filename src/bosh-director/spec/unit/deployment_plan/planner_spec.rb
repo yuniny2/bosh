@@ -3,11 +3,11 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe Planner do
-      subject(:planner) { described_class.new(planner_attributes, minimal_manifest, cloud_config, runtime_config_consolidator, deployment_model, options) }
+      subject(:planner) { described_class.new(planner_attributes, minimal_manifest, YAML.dump(minimal_manifest), cloud_configs, runtime_config_consolidator, deployment_model, options) }
 
       let(:options) { {} }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
-      let(:cloud_config) { nil }
+      let(:cloud_configs) { [] }
       let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }
       let(:manifest_text) { generate_manifest_text }
       let(:planner_attributes) { {name: 'mycloud', properties: {}} }
@@ -78,6 +78,7 @@ module Bosh::Director
 
         before do
           deployment_model.add_stemcell(stemcell_model)
+          deployment_model.add_variable_set(Models::VariableSet.make(deployment: deployment_model))
           cloud_planner = CloudPlanner.new({
             networks: [Network.new('default', logger)],
             global_network_resolver: GlobalNetworkResolver.new(planner, [], logger),
@@ -96,16 +97,16 @@ module Bosh::Director
         end
 
         it 'manifest should be immutable' do
-          subject = Planner.new(planner_attributes, minimal_manifest, cloud_config, runtime_config_consolidator, deployment_model, options)
+          subject = Planner.new(planner_attributes, minimal_manifest, YAML.dump(minimal_manifest), cloud_configs, runtime_config_consolidator, deployment_model, options)
           minimal_manifest['name'] = 'new_name'
-          expect(subject.uninterpolated_manifest_text['name']).to eq('minimal')
+          expect(subject.uninterpolated_manifest_hash['name']).to eq('minimal')
         end
 
         it 'should parse recreate' do
-          expect(planner.recreate).to eq(false)
+          expect(planner.recreate).to be_falsey
 
-          plan = described_class.new(planner_attributes, manifest_text, cloud_config, runtime_config_consolidator, deployment_model, 'recreate' => true)
-          expect(plan.recreate).to eq(true)
+          plan = described_class.new(planner_attributes, manifest_text, YAML.dump(manifest_text), cloud_configs, runtime_config_consolidator, deployment_model, 'recreate' => true)
+          expect(plan.recreate).to be_truthy
         end
 
         it 'creates a vm requirements cache' do
@@ -295,7 +296,7 @@ module Bosh::Director
               end
 
               it 'returns TRUE' do
-                expect(subject.use_short_dns_addresses?).to eq(true)
+                expect(subject.use_short_dns_addresses?).to be_truthy
               end
             end
 
@@ -305,7 +306,7 @@ module Bosh::Director
               end
 
               it 'returns FALSE' do
-                expect(subject.use_short_dns_addresses?).to eq(false)
+                expect(subject.use_short_dns_addresses?).to be_falsey
               end
             end
           end
@@ -316,7 +317,7 @@ module Bosh::Director
             end
 
             it 'returns FALSE' do
-              expect(subject.use_short_dns_addresses?).to eq(false)
+              expect(subject.use_short_dns_addresses?).to be_falsey
             end
           end
         end
@@ -334,7 +335,7 @@ module Bosh::Director
                 end
 
                 it 'returns TRUE' do
-                  expect(subject.use_dns_addresses?).to eq(true)
+                  expect(subject.use_dns_addresses?).to be_truthy
                 end
               end
 
@@ -344,7 +345,7 @@ module Bosh::Director
                 end
 
                 it 'returns FALSE' do
-                  expect(subject.use_dns_addresses?).to eq(false)
+                  expect(subject.use_dns_addresses?).to be_falsey
                 end
               end
             end
@@ -355,7 +356,7 @@ module Bosh::Director
               end
 
               it 'returns TRUE' do
-                expect(subject.use_dns_addresses?).to eq(true)
+                expect(subject.use_dns_addresses?).to be_truthy
               end
             end
           end
@@ -372,7 +373,7 @@ module Bosh::Director
                 end
 
                 it 'returns TRUE' do
-                  expect(subject.use_dns_addresses?).to eq(true)
+                  expect(subject.use_dns_addresses?).to be_truthy
                 end
               end
 
@@ -382,7 +383,7 @@ module Bosh::Director
                 end
 
                 it 'returns FALSE' do
-                  expect(subject.use_dns_addresses?).to eq(false)
+                  expect(subject.use_dns_addresses?).to be_falsey
                 end
               end
             end
@@ -393,8 +394,24 @@ module Bosh::Director
               end
 
               it 'returns FALSE' do
-                expect(subject.use_dns_addresses?).to eq(false)
+                expect(subject.use_dns_addresses?).to be_falsey
               end
+            end
+          end
+        end
+
+        describe '#using_global_networking?' do
+          context 'when cloud configs are empty' do
+            it 'returns false' do
+              expect(subject.using_global_networking?).to be_falsey
+            end
+          end
+
+          context 'when cloud configs are not empty' do
+            let(:cloud_configs) { [Models::Config.make(:cloud, content: '--- {"networks": [{"name":"test","subnets":[]}],"compilation":{"workers":1,"canary_watch_time":1,"update_watch_time":1,"serial":false,"network":"test"}}')] }
+
+            it 'returns true' do
+              expect(subject.using_global_networking?).to be_truthy
             end
           end
         end
@@ -407,7 +424,7 @@ module Bosh::Director
               end
 
               it 'returns TRUE' do
-                expect(subject.randomize_az_placement?).to eq(true)
+                expect(subject.randomize_az_placement?).to be_truthy
               end
             end
 
@@ -417,7 +434,7 @@ module Bosh::Director
               end
 
               it 'returns FALSE' do
-                expect(subject.randomize_az_placement?).to eq(false)
+                expect(subject.randomize_az_placement?).to be_falsey
               end
             end
           end
@@ -428,7 +445,7 @@ module Bosh::Director
             end
 
             it 'returns FALSE' do
-              expect(subject.randomize_az_placement?).to eq(false)
+              expect(subject.randomize_az_placement?).to be_falsey
             end
           end
         end
@@ -439,6 +456,30 @@ module Bosh::Director
 
           it 'returns team names from the deployment' do
             expect(subject.team_names).to match_array(["team_1", "team_3"])
+          end
+        end
+
+        context 'links' do
+          describe '#add_link_providers' do
+            let(:link_provider) {instance_double(Models::LinkProvider)}
+            before do
+              subject.add_link_provider link_provider
+            end
+            it 'adds link provider to list of providers' do
+              expect(subject.link_providers.count).to eq(1)
+              expect(subject.link_providers[0]).to eq(link_provider)
+            end
+          end
+
+          describe '#add_link_consumers' do
+            let(:link_consumer) {instance_double(Models::LinkConsumer)}
+            before do
+              subject.add_link_consumer link_consumer
+            end
+            it 'adds link consumer to list of consumers' do
+              expect(subject.link_consumers.count).to eq(1)
+              expect(subject.link_consumers[0]).to eq(link_consumer)
+            end
           end
         end
       end

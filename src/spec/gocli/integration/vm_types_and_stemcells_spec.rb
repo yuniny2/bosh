@@ -19,14 +19,15 @@ describe 'vm_types and stemcells', type: :integration do
   let(:expected_env_hash) do
     hash_copy = Marshal.load(Marshal.dump(env_hash))
     hash_copy['bosh']['mbus'] = Hash
+    hash_copy['bosh']['dummy_agent_key_merged'] = 'This key must be sent to agent' # merged from the director yaml configuration (agent.env.bosh key)
     hash_copy
   end
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'] = [{
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'] = [{
       'name' => 'foobar',
-      'templates' => ['name' => 'foobar'],
+      'jobs' => [{'name' => 'foobar'}],
       'vm_type' => 'a',
       'stemcell' => 'default',
       'instances' => 1,
@@ -54,14 +55,16 @@ describe 'vm_types and stemcells', type: :integration do
     ])
   end
 
-  it 'saves manifest with resolved latest stemcell versions' do
+  it 'resolves latest stemcell versions' do
     manifest_hash['stemcells'].first['version'] = 'latest'
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-    expect(bosh_runner.run('manifest', deployment_name: 'simple')).to match_output %(
-stemcells:
-- alias: default
-  name: ubuntu-stemcell
-  version: '1'
+    manifest_hash['stemcells'].first['version'] = '3'
+    deploy_output = deploy(manifest_hash: manifest_hash, failure_expected: true, redact_diff: true)
+    expect(deploy_output).to match_output %(
+  stemcells:
+  - name: ubuntu-stemcell
+-   version: '1'
++   version: '3'
     )
   end
 
@@ -75,7 +78,7 @@ stemcells:
       env_hash['env2'] = 'new_env_value'
       expected_env_hash['env2'] = env_hash['env2']
 
-      manifest_hash['jobs'].first['env'] = env_hash
+      manifest_hash['instance_groups'].first['env'] = env_hash
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
@@ -87,7 +90,7 @@ stemcells:
 
   context 'when instance is deployed originally with stemcell specified with name' do
     it 'should not re-deploy if the stemcell is the same one' do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
       create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
@@ -96,9 +99,9 @@ stemcells:
       cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-      manifest_hash['jobs'] = [{
+      manifest_hash['instance_groups'] = [{
         'name' => 'foobar',
-        'templates' => ['name' => 'foobar'],
+        'jobs' => [{'name' => 'foobar'}],
         'vm_type' => 'a',
         'stemcell' => 'default',
         'instances' => 3,
@@ -124,11 +127,11 @@ stemcells:
     vm_type3['cloud_properties']['blarg'] = ['ful']
     cloud_config_hash['vm_types'] = [vm_type1, vm_type2, vm_type3]
 
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
 
-    manifest_hash['jobs'] = [{
+    manifest_hash['instance_groups'] = [{
         'name' => 'foobar',
-        'templates' => ['name' => 'foobar'],
+        'jobs' => [{'name' => 'foobar'}],
         'vm_type' => 'vm-type-name',
         'stemcell' => 'default',
         'instances' => 3,
@@ -141,14 +144,14 @@ stemcells:
     create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
     expect(create_vm_invocations.count).to be > 0
 
-    manifest_hash['jobs'].first['vm_type'] = 'renamed-vm-type'
+    manifest_hash['instance_groups'].first['vm_type'] = 'renamed-vm-type'
 
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
     new_create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
     expect(new_create_vm_invocations.count).to eq(create_vm_invocations.count)
 
-    manifest_hash['jobs'].first['vm_type'] = 'changed-vm-type-cloud-properties'
+    manifest_hash['instance_groups'].first['vm_type'] = 'changed-vm-type-cloud-properties'
 
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
@@ -252,10 +255,10 @@ stemcells:
 
     context 'deployment instance group uses other vm_extensions' do
       let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-        manifest_hash['jobs'] = [{
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        manifest_hash['instance_groups'] = [{
             'name' => 'foobar',
-            'templates' => ['name' => 'foobar'],
+            'jobs' => [{'name' => 'foobar'}],
             'vm_type' => 'vm-type-1-name',
             'vm_extensions' => ['vm-extension-1-name', 'vm-extension-2-name'],
             'azs' => ['a'],

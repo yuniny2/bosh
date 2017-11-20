@@ -64,7 +64,8 @@ module Bosh::Director
             Bosh::Director::Models::Deployment.find(name: @deployment_name).add_variable_set(:created_at => Time.now, :writable => true)
           end
 
-          deployment_manifest_object = Manifest.load_from_hash(manifest_hash, cloud_config_models, runtime_config_models)
+          manifest_text = @options.fetch('manifest_text', @manifest_text)
+          deployment_manifest_object = Manifest.load_from_hash(manifest_hash, manifest_text, cloud_config_models, runtime_config_models)
 
           @notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, logger)
           @notifier.send_start_event unless dry_run?
@@ -88,7 +89,6 @@ module Bosh::Director
 
           begin
             current_variable_set = deployment_plan.model.current_variable_set
-
 
             render_templates_and_snapshot_errand_variables(deployment_plan, current_variable_set, dns_encoder)
 

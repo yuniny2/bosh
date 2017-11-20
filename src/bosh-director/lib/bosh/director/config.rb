@@ -3,6 +3,7 @@ require 'logging'
 require 'socket'
 require 'uri'
 require 'common/logging/filters'
+require 'tmpdir'
 
 module Bosh::Director
 
@@ -58,7 +59,7 @@ module Bosh::Director
         :nats_client_certificate_path,
         :nats_client_ca_private_key_path,
         :nats_client_ca_certificate_path,
-        :runtime
+        :runtime,
       )
 
       def clear
@@ -136,6 +137,8 @@ module Bosh::Director
         @default_ssh_options = config['default_ssh_options']
 
         @cloud_options = config['cloud']
+        @agent_env = config.fetch('agent',{}).fetch('env', {}).fetch('bosh', {})
+
         @compiled_package_cache_options = config['compiled_package_cache']
         @name = config['name'] || ''
 
@@ -211,6 +214,10 @@ module Bosh::Director
         end
         @verify_multidigest_path = config['verify_multidigest_path']
         @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
+      end
+
+      def agent_env
+        @agent_env || {}
       end
 
       def log_director_start
@@ -294,6 +301,7 @@ module Bosh::Director
         if logger
           db.logger = logger
           db.sql_log_level = :debug
+          db.log_connection_info = true
         end
 
         db

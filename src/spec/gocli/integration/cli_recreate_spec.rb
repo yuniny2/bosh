@@ -3,8 +3,9 @@ require_relative '../spec_helper'
 describe 'recreate instance', type: :integration do
   with_reset_sandbox_before_each
 
-  it 'recreates an instance only when using index' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+  it 'recreates an instance only when using index with the original config' do
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    upload_cloud_config(cloud_config_hash: {})
 
     initial_instances = director.instances
     instance_to_be_recreated = director.find_instance(initial_instances, 'foobar', '0')
@@ -16,8 +17,9 @@ describe 'recreate instance', type: :integration do
     expect((initial_instances-[instance_to_be_recreated]).map(&:vm_cid)).to match_array((instances_after_instance_recreate-[instance_was_recreated]).map(&:vm_cid))
   end
 
-  it 'recreates an instance only when using instance uuid' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_stemcell, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+  it 'recreates an instance only when using instance uuid with the original config' do
+    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    upload_cloud_config(cloud_config_hash: {})
 
     initial_instances = director.instances
     instance_to_be_recreated = director.find_instance(initial_instances, 'foobar', '0')
@@ -40,18 +42,19 @@ describe 'recreate instance', type: :integration do
     )
   end
 
-  it 'recreates vms for a given instance group or the whole deployment' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs']<< {
+  it 'recreates vms for a given instance group or the whole deployment with the original config' do
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups']<< {
         'name' => 'another-job',
-        'template' => 'foobar',
+        'jobs' => [{'name' => 'foobar'}],
         'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{'name' => 'a'}],
         'stemcell' => 'default'
     }
-    manifest_hash['jobs'].first['instances']= 2
+    manifest_hash['instance_groups'].first['instances']= 2
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    upload_cloud_config(cloud_config_hash: {})
 
     #only vms for one job should be recreated
     initial_instances = director.instances
@@ -72,10 +75,39 @@ describe 'recreate instance', type: :integration do
     expect(director.instances).not_to match_array(initial_instances.map(&:vm_cid))
   end
 
+  context 'when a new release is uploaded and the release version in the manifest is latest' do
+    it 'recreates an instance with initially resolved release version' do
+      release_filename = spec_asset('unsorted-release-0+dev.1.tgz')
+      stemcell_filename = spec_asset('valid_stemcell.tgz')
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['releases'] = [{
+        'name' => 'unsorted-release',
+        'version' => 'latest'
+      }]
+
+      deployment_manifest = yaml_file('simple', manifest_hash)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
+
+      bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
+      bosh_runner.run("upload-stemcell #{stemcell_filename}")
+      bosh_runner.run("upload-release #{release_filename}")
+
+      bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
+      bosh_runner.run("upload-release #{spec_asset('unsorted-release-0+dev.2.tgz')}")
+      bosh_runner.run('recreate', deployment_name: 'simple')
+
+      table_output = table(bosh_runner.run('releases', json: true))
+      expect(table_output).to include(
+        {"commit_hash" => String, "name" => "unsorted-release", "version" => "0+dev.2"},
+        {"commit_hash" => String, "name" => "unsorted-release", "version" => "0+dev.1*"}
+      )
+    end
+  end
+
   context 'with dry run flag' do
     context 'when a vm has been deleted' do
       it 'does not try to recreate that vm' do
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
 
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
@@ -91,7 +123,7 @@ describe 'recreate instance', type: :integration do
 
     context 'when there are no errors' do
       it 'returns some encouraging message but does not recreate vms' do
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
 
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 

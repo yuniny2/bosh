@@ -8,7 +8,8 @@ module Bosh::Director
     describe Controllers::EventsController do
       include Rack::Test::Methods
 
-      subject(:app) { described_class.new(config) }
+      subject(:app) { linted_rack_app(described_class.new(config)) }
+
       let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
       let(:timestamp) { Time.now }
 
@@ -437,7 +438,7 @@ module Bosh::Director
 
           it 'returns correct number of events' do
             make_events(250)
-            Models::Event.filter("id > ?", 200).delete
+            Models::Event.filter(Sequel.lit("id > ?", 200)).delete
 
             make_events(50)
 
@@ -453,7 +454,7 @@ module Bosh::Director
           context 'when number of returned events is less than EVENT_LIMIT' do
             it 'returns empty list if before_id < minimal id' do
               make_events(10)
-              Models::Event.filter("id <  ?", 5).delete
+              Models::Event.filter(Sequel.lit("id <  ?", 5)).delete
               get '?before_id=4'
               body = JSON.parse(last_response.body)
 
@@ -502,6 +503,8 @@ module Bosh::Director
 
           it 'stores event' do
             expect { perform }.not_to raise_exception
+            expect(last_response.status).to eq(200)
+            expect(last_response.body).to eq('')
             event = Models::Event.first
             expect(event.id).to eq(1)
             expect(event.parent_id).to eq(nil)

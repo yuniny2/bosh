@@ -67,9 +67,9 @@ module SpecHelper
     def spec_get_director_config
       config = YAML.load_file(File.expand_path('assets/test-director-config.yml', File.dirname(__FILE__)))
 
-      config['nats']['server_ca_path'] = File.expand_path('assets/nats_ca.pem', File.dirname(__FILE__))
-      config['nats']['client_ca_certificate_path'] = File.expand_path('assets/nats_ca_certificate.pem', File.dirname(__FILE__))
-      config['nats']['client_ca_private_key_path'] = File.expand_path('assets/nats_ca_private_key.pem', File.dirname(__FILE__))
+      config['nats']['server_ca_path'] = File.expand_path('assets/nats/nats_ca.pem', File.dirname(__FILE__))
+      config['nats']['client_ca_certificate_path'] = File.expand_path('assets/nats/nats_ca_certificate.pem', File.dirname(__FILE__))
+      config['nats']['client_ca_private_key_path'] = File.expand_path('assets/nats/nats_ca_private_key.pem', File.dirname(__FILE__))
       config['db']['adapter'] = @director_db_helper.adapter
       config['db']['host'] = @director_db_helper.host
       config['db']['database'] = @director_db_helper.db_name
@@ -112,7 +112,10 @@ module SpecHelper
       Sequel.extension :migration
 
       connect_database
+
+      Sequel::Deprecation.output = false
       Delayed::Worker.backend = :sequel
+      Sequel::Deprecation.output = $stderr
 
       run_migrations
     end
@@ -163,17 +166,17 @@ module SpecHelper
 
       Bosh::Director::Models.constants.each do |e|
         c = Bosh::Director::Models.const_get(e)
-        c.db = @director_db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @director_db[c.simple_table.gsub(/`/,"").to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
       Delayed::Backend::Sequel.constants.each do |e|
         c = Delayed::Backend::Sequel.const_get(e)
-        c.db = @director_db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @director_db[c.simple_table.gsub(/`/,"").to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
       Bosh::Director::Models::Dns.constants.each do |e|
         c = Bosh::Director::Models::Dns.const_get(e)
-        c.db = @dns_db if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @dns_db[c.simple_table.gsub(/`/,"").to_sym] if c.kind_of?(Class) && c.ancestors.include?(Sequel::Model)
       end
     end
 
@@ -251,6 +254,13 @@ def check_event_log(task_id)
     yield events
   else
     nil
+  end
+end
+
+def linted_rack_app(app)
+  Rack::Builder.new do
+    use Rack::Lint
+    run app
   end
 end
 

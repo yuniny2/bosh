@@ -4,9 +4,9 @@ describe 'cli: events', type: :integration do
   with_reset_sandbox_before_each
 
   it 'displays deployment events' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_stemcell
-    manifest_hash['jobs'][0]['persistent_disk_pool'] = 'disk_a'
-    manifest_hash['jobs'][0]['instances'] = 1
+    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'][0]['persistent_disk_pool'] = 'disk_a'
+    manifest_hash['instance_groups'][0]['instances'] = 1
     cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
     disk_type = Bosh::Spec::NewDeployments.disk_type
     cloud_config['disk_types'] = [disk_type]
@@ -43,8 +43,8 @@ describe 'cli: events', type: :integration do
       {'action' => 'delete', 'object_type' => 'instance', 'object_name' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'orphan', 'object_type' => 'disk', 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'orphan', 'object_type' => 'disk', 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
-      {'action' => 'delete', 'object_type' => 'vm', 'object_name' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
-      {'action' => 'delete', 'object_type' => 'vm', 'object_name' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'vm', 'object_name' => /[0-9]{1,6}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'vm', 'object_name' => /[0-9]{1,6}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'instance', 'object_name' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'deployment', 'object_name' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''},
       {'action' => 'update', 'object_type' => 'deployment', 'object_name' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => "after:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1\nbefore:\n  releases:\n  - bosh-release/0+dev.1\n  stemcells:\n  - ubuntu-stemcell/1", 'error' => "'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)' is not running after update. Review logs for failed jobs: process-3"},
@@ -56,14 +56,14 @@ describe 'cli: events', type: :integration do
       {'action' => 'create', 'object_type' => 'disk', 'object_name' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'create', 'object_type' => 'disk', 'object_name' => '', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'create', 'object_type' => 'instance', 'object_name' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
-      {'action' => 'create', 'object_type' => 'vm', 'object_name' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'create', 'object_type' => 'vm', 'object_name' => /[0-9]{1,6}/, 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'create', 'object_type' => 'vm', 'object_name' => '', 'deployment' => 'simple', 'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'instance', 'object_name' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
-      {'action' => 'delete', 'object_type' => 'vm', 'object_name' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
-      {'action' => 'delete', 'object_type' => 'vm', 'object_name' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'vm', 'object_name' => /[0-9]{1,6}/, 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'delete', 'object_type' => 'vm', 'object_name' => /[0-9]{1,6}/, 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'delete', 'object_type' => 'instance', 'object_name' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'create', 'object_type' => 'instance', 'object_name' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
-      {'action' => 'create', 'object_type' => 'vm', 'object_name' => /[0-9]{1,5}/, 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
+      {'action' => 'create', 'object_type' => 'vm', 'object_name' => /[0-9]{1,6}/, 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'create', 'object_type' => 'vm', 'object_name' => '', 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'create', 'object_type' => 'instance', 'object_name' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'deployment' => 'simple', 'instance' => 'compilation-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'context' => '', 'error' => ''},
       {'action' => 'create', 'object_type' => 'deployment', 'object_name' => 'simple', 'deployment' => 'simple', 'instance' => '', 'context' => '', 'error' => ''},
