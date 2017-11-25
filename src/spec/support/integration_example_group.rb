@@ -335,6 +335,7 @@ module IntegrationSandboxHelpers
   end
 
   def reconfigure_sandbox(options)
+    puts "ReconfigureSandbox: #{options}"
     current_sandbox.reconfigure(options)
   end
 

@@ -26,7 +26,7 @@ module DBSpecHelper
       host = ENV['DB_HOST'] || '127.0.0.1'
       user = ENV['DB_USER']
       password = ENV['DB_PASSWORD']
-
+      puts "Main:ConnectDatabase: #{ENV.fetch('DB')}"
       case ENV.fetch('DB', 'sqlite')
         when 'postgresql'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))

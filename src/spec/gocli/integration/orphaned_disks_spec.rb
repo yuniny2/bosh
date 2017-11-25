@@ -3,6 +3,7 @@ require_relative '../spec_helper'
 describe 'orphaned disks', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
+  with_reset_sandbox_before_each(:enable_tls_database => true)
 
   it 'should return orphan disks' do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups

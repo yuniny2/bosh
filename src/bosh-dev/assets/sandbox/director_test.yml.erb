@@ -35,6 +35,8 @@ db: &bosh_db
     enable: <%= database_config.enable_ssl %>
     cert:
       ca: <%= database_config.ca_path %>
+      private_key: <%= database_config.private_key_path %>
+      cert: <%= database_config.cert_path %>
   <% end %>
 
   connection_options:
