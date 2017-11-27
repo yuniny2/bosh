@@ -5,10 +5,13 @@ require 'bosh/dev/sandbox/service'
 require 'bosh/dev/sandbox/http_endpoint_connector'
 require 'bosh/dev/sandbox/socket_connector'
 require 'bosh/dev/sandbox/postgresql'
+require 'bosh/dev/sandbox/postgresql_env'
 require 'bosh/dev/sandbox/mysql'
+require 'bosh/dev/sandbox/mysql_env'
 require 'bosh/dev/sandbox/nginx'
 require 'bosh/dev/sandbox/workspace'
 require 'bosh/dev/sandbox/director_config'
+require 'bosh/dev/sandbox/database_config'
 require 'bosh/dev/sandbox/port_provider'
 require 'bosh/dev/sandbox/services/director_service'
 require 'bosh/dev/sandbox/services/nginx_service'
@@ -108,13 +111,14 @@ module Bosh::Dev::Sandbox
       @config_server_service = ConfigServerService.new(@port_provider, base_log_path, @logger, test_env_number)
       @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, @uaa_service.port, @logger)
 
+      @enable_tls_database = false
       setup_database(db_opts)
 
       director_config_path = sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
       @director_service = DirectorService.new(
         {
-          database: @database,
+          database: @selected_database,
           director_port: director_ruby_port,
           base_log_path: base_log_path,
           director_tmp_path: director_tmp_path,
@@ -167,14 +171,15 @@ module Bosh::Dev::Sandbox
       FileUtils.rm_rf(logs_path)
       FileUtils.mkdir_p(logs_path)
 
-      @database_proxy && @database_proxy.start
+      @db_env.get_proxy&.start
+      @db_env.get_ssl_proxy&.start
 
       @nginx_service.start
 
       @nats_process.start
       @nats_socket_connector.try_to_connect
 
-      @database.create_db
+      @selected_database.create_db
 
       unless @test_initial_state.nil?
         load_db_and_populate_blobstore(@test_initial_state)
@@ -196,7 +201,7 @@ module Bosh::Dev::Sandbox
     def director_config
       attributes = {
         sandbox_root: sandbox_root,
-        database: @database,
+        database_config: @database_config,
         blobstore_storage_dir: blobstore_storage_dir,
         verify_multidigest_path: verify_multidigest_path,
         director_fix_stateful_nodes: @director_fix_stateful_nodes,
@@ -261,8 +266,9 @@ module Bosh::Dev::Sandbox
 
       @config_server_service.stop
 
-      @database.drop_db
-      @database_proxy && @database_proxy.stop
+      @selected_database.drop_db
+      @db_env.get_proxy&.stop
+      @db_env.get_ssl_proxy&.stop
 
       FileUtils.rm_f(dns_db_path)
       FileUtils.rm_rf(agent_tmp_path)
@@ -331,6 +337,21 @@ module Bosh::Dev::Sandbox
       @director_ips = options.fetch(:director_ips, [])
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
       check_if_nats_need_reset(options.fetch(:nats_allow_legacy_clients, false))
+
+      @enable_tls_database = options.fetch(:enable_tls_database, false)
+      select_database(@enable_tls_database)
+    end
+
+    def select_database(enable_tls)
+      @previous_database = @selected_database
+      if enable_tls
+        @selected_database = @db_env.get_ssl_database(db_name)
+        @selected_proxy = @db_env.get_ssl_proxy
+      else
+        @selected_database = @db_env.get_database(db_name)
+        @selected_proxy = @db_env.get_proxy
+      end
+      @database_config = DatabaseConfig.new(@db_env, @selected_database, enable_tls)
     end
 
     def check_if_nats_need_reset(allow_legacy_clients)
@@ -381,7 +402,7 @@ module Bosh::Dev::Sandbox
         ssl: true,
         tls: {
           :private_key_file => nats_certificate_paths['clients']['test_client']['private_key_path'],
-          :cert_chain_file  => nats_certificate_paths['clients']['test_client']['certificate_path'],
+          :cert_chain_file => nats_certificate_paths['clients']['test_client']['certificate_path'],
           :verify_peer => true,
           :ca_file => nats_certificate_paths['ca_path'],
         }
@@ -427,10 +448,10 @@ module Bosh::Dev::Sandbox
       @director_service.stop
 
       if @drop_database
-        @database.drop_db
-        @database.create_db
+        @previous_database.drop_db
+        @previous_database.create_db
       else
-        @database.truncate_db
+        @previous_database.truncate_db
       end
 
       FileUtils.rm_rf(blobstore_storage_dir)
@@ -494,12 +515,11 @@ module Bosh::Dev::Sandbox
 
     def setup_database(db_opts)
       if db_opts[:type] == 'mysql'
-        @database = Mysql.new(@name, @logger, Bosh::Core::Shell.new, db_opts[:user], db_opts[:password])
+        @db_env = MysqlEnv.new(logger, db_opts[:user], db_opts[:password])
       else
-        @database = Postgresql.new(@name, @logger, @port_provider.get_port(:postgres))
-        # all postgres connections go through this proxy (for testing automatic reconnect)
-        @database_proxy = ConnectionProxyService.new(sandbox_root, '127.0.0.1', 5432, @port_provider.get_port(:postgres), base_log_path, @logger)
+        @db_env = PostgresqlEnv.new(sandbox_root, @port_provider, logger, base_log_path)
       end
+      select_database(@database_tls_enable)
     end
 
     def setup_heath_monitor
