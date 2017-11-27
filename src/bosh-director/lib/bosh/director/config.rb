@@ -281,6 +281,7 @@ module Bosh::Director
 
           certificate_paths = tls_options.fetch('cert', {})
           connection_config['sslrootcert'] = certificate_paths.fetch('ca', '')
+          connection_config['sslca'] = certificate_paths.fetch('ca', '')
         else
           connection_config['sslmode'] = 'disable'
         end
