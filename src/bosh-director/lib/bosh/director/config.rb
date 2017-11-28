@@ -270,20 +270,47 @@ module Bosh::Director
       end
 
       def configure_db(db_config)
+
+        # deep copy
         connection_config = db_config.dup
+
         connection_options = connection_config.delete('connection_options') { {} }
 
         # Convert generic security settings to mysql/postgres format
         tls_options = connection_config.delete('tls') { {} }
         tls_enabled = tls_options.fetch('enable', false)
-        if tls_enabled
-          connection_config['sslmode'] = 'verify-ca'
 
+        # make sure properties are provided in order (refer gem docs)
+        # :sslkey, :sslcert, :sslca, :sslcapath, :sslcipher
+
+        if tls_enabled
           certificate_paths = tls_options.fetch('cert', {})
-          connection_config['sslrootcert'] = certificate_paths.fetch('ca', '')
-          connection_config['sslca'] = certificate_paths.fetch('ca', '')
+          connection_config['sslkey'] = certificate_paths.fetch('private_key', '')
+          connection_config['sslcert'] = certificate_paths.fetch('cert', '')
+
+          # TODO: if-else can be removed and add all the non-required properties for the adapter
+          #       gem will not care (cleanup).
+          # both adapter expect different ssl-mode and keyname and value
+          # mysql:    ssl_mode = disabled
+          # postgres: sslmode = disable
+
+          # mysql:    ssl_mode = verify_ca
+          # postgres: sslmode = verify-ca
+
+          if ['mysql', 'mysql2'].include?connection_config['adapter']
+            connection_config['sslca'] = certificate_paths.fetch('ca', '')
+            connection_config['ssl_mode'] = connection_options.fetch('sslmode', 'verify_ca')
+            connection_options.delete('sslmode')
+          else
+            connection_config['sslmode'] = 'verfiy-ca' unless connection_options.fetch('sslmode', false)
+            connection_config['sslrootcert'] = certificate_paths.fetch('ca', '')
+          end
         else
-          connection_config['sslmode'] = 'disable'
+          if ['mysql', 'mysql2'].include?connection_config['adapter']
+            connection_config['ssl_mode'] = 'disabled'
+          else
+            connection_config['sslmode'] = 'disable'
+          end
         end
 
         connection_config.delete_if { |_, v| v.to_s.empty? }

@@ -1,3 +1,4 @@
+
 require 'spec_helper'
 require 'sequel/extensions/connection_validator'
 
@@ -567,18 +568,19 @@ describe Bosh::Director::Config do
       allow(database).to receive(:extension)
       allow(database).to receive(:logger=)
       allow(database).to receive(:sql_log_level=)
+      allow(database).to receive(:log_connection_info=)
     end
 
     context 'when db config has empty entries' do
       it 'prunes empty entries before passing it to sequel' do
         parameters = {
-          host: '127.0.0.1',
-          port: 5432,
-          nil_value: nil,
-          empty_value: '',
+          'host' => '127.0.0.1',
+          'port' => 5432,
+          'nil_value' => nil,
+          'empty_value' => ''
         }
 
-        expect(Sequel).to receive(:connect).with({host: '127.0.0.1', port: 5432}).and_return(database)
+        expect(Sequel).to receive(:connect).with({'host' => '127.0.0.1', 'port' => 5432, 'sslmode' => 'disable'}).and_return(database)
         described_class.configure_db(parameters)
       end
 
@@ -591,30 +593,89 @@ describe Bosh::Director::Config do
             }
           }
 
-          expect(Sequel).to receive(:connect).with({'host' => '127.0.0.1', 'port' => 5432}).and_return(database)
+          expect(Sequel).to receive(:connect).with({'host' => '127.0.0.1', 'port' => 5432, 'sslmode' => 'disable'}).and_return(database)
+          described_class.configure_db(parameters)
+        end
+
+        it 'will add all mysql specific entries' do
+          parameters = {
+              'connection_options' => {
+                  'host' => '127.0.0.1',
+                  'port' => 3306,
+              },
+              'adapter' => 'mysql2'
+          }
+
+          # different ssl-mode keyname and value (not exactly same as postgres test)
+          expect(Sequel).to receive(:connect).with({
+                    'host' => '127.0.0.1',
+                    'port' => 3306,
+                    'ssl_mode' => 'disabled',
+                    'adapter' => 'mysql2'}).and_return(database)
           described_class.configure_db(parameters)
         end
       end
     end
 
     context 'when TLS is requested' do
-      it 'connects with SSL enabled' do
+      it 'connects with SSL enabled for postgres' do
         config = {
-          'adapter' => 'postgresql',
-          'host' => '127.0.0.1',
-          'port' => 5432,
-          'connection_options' => {
-            'sslmode' => 'require',
-            'sslrootcert' => '/path/to/root/ca',
-          }
+            'adapter' => 'postgresql',
+            'host' => '127.0.0.1',
+            'port' => 5432,
+            'tls' => {
+                'enable' => true,
+                'cert' => {
+                    'ca' => '/path/to/root/ca',
+                    'cert' => '/path/to/client/cert',
+                    'private_key' => '/path/to/client/key'
+                },
+            },
+            'connection_options' => {
+                'sslmode' => 'require'
+            }
         }
 
         connection_parameter = {
-          'adapter' => 'postgresql',
-          'host' => '127.0.0.1',
-          'port' => 5432,
-          'sslmode' => 'require',
-          'sslrootcert' => '/path/to/root/ca',
+            'adapter' => 'postgresql',
+            'host' => '127.0.0.1',
+            'port' => 5432,
+            'sslmode' => 'require',
+            'sslrootcert' => '/path/to/root/ca',
+            'sslcert' => '/path/to/client/cert',
+            'sslkey' => '/path/to/client/key',
+        }
+
+        expect(Sequel).to receive(:connect).with(connection_parameter).and_return(database)
+        described_class.configure_db(config)
+      end
+
+      it 'connects with SSL enabled for mysql' do
+        config = {
+            'adapter' => 'mysql2',
+            'host' => '127.0.0.1',
+            'port' => 5432,
+            'tls' => {
+                'enable' => true,
+                'cert' => {
+                    'ca' => '/path/to/root/ca',
+                    'cert' => '/path/to/client/cert',
+                    'private_key' => '/path/to/client/key'
+                },
+            },
+            'connection_options' => {
+                'sslmode' => 'require'
+            }
+        }
+
+        connection_parameter = {
+            'adapter' => 'mysql2',
+            'host' => '127.0.0.1',
+            'port' => 5432,
+            'ssl_mode' => 'require',
+            'sslca' => '/path/to/root/ca',
+            'sslcert' => '/path/to/client/cert',
+            'sslkey' => '/path/to/client/key',
         }
 
         expect(Sequel).to receive(:connect).with(connection_parameter).and_return(database)

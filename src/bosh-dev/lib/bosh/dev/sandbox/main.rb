@@ -70,8 +70,9 @@ module Bosh::Dev::Sandbox
     def self.from_env
       db_opts = {
         type: ENV['DB'] || 'postgresql',
-        user: ENV['TRAVIS'] ? 'travis' : 'root',
-        password: ENV['TRAVIS'] ? '' : 'password',
+        user: ENV['TRAVIS'] ? 'travis' : 'ssluser',
+        password: ENV['TRAVIS'] ? '' : 'ssluser',
+        enable_tls_database: ENV.fetch('DB_TLS', false).to_s == 'true'
       }
 
       logger = Logging.logger(STDOUT)
@@ -172,7 +173,6 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(logs_path)
 
       @db_env.get_proxy&.start
-      @db_env.get_ssl_proxy&.start
 
       @nginx_service.start
 
@@ -268,7 +268,6 @@ module Bosh::Dev::Sandbox
 
       @selected_database.drop_db
       @db_env.get_proxy&.stop
-      @db_env.get_ssl_proxy&.stop
 
       FileUtils.rm_f(dns_db_path)
       FileUtils.rm_rf(agent_tmp_path)
@@ -338,19 +337,14 @@ module Bosh::Dev::Sandbox
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
       check_if_nats_need_reset(options.fetch(:nats_allow_legacy_clients, false))
 
-      @enable_tls_database = options.fetch(:enable_tls_database, false)
+      @enable_tls_database = options.fetch(:enable_tls_database, ENV.fetch('DB_TLS', false)).to_s == 'true'
       select_database(@enable_tls_database)
     end
 
     def select_database(enable_tls)
       @previous_database = @selected_database
-      if enable_tls
-        @selected_database = @db_env.get_ssl_database(db_name)
-        @selected_proxy = @db_env.get_ssl_proxy
-      else
-        @selected_database = @db_env.get_database(db_name)
-        @selected_proxy = @db_env.get_proxy
-      end
+      @selected_database = @db_env.get_database(db_name)
+      @selected_proxy = @db_env.get_proxy
       @database_config = DatabaseConfig.new(@db_env, @selected_database, enable_tls)
     end
 
@@ -514,12 +508,14 @@ module Bosh::Dev::Sandbox
     end
 
     def setup_database(db_opts)
+      puts "OPTS: #{db_opts}"
       if db_opts[:type] == 'mysql'
-        @db_env = MysqlEnv.new(logger, db_opts[:user], db_opts[:password])
+        @db_env = MysqlEnv.new(sandbox_root, @port_provider, logger, base_log_path, db_opts[:user], db_opts[:password])
       else
         @db_env = PostgresqlEnv.new(sandbox_root, @port_provider, logger, base_log_path)
       end
-      select_database(@database_tls_enable)
+      @enable_tls_database = db_opts[:enable_tls_database]
+      select_database(@enable_tls_database)
     end
 
     def setup_heath_monitor
