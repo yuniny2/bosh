@@ -1,6 +1,4 @@
-require 'rspec'
-require 'bosh/template/evaluation_context'
-require_relative './template_example_group'
+require 'spec_helper'
 
 describe 'director templates' do
  describe 'director' do

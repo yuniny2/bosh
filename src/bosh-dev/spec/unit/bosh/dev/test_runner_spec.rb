@@ -33,6 +33,14 @@ module Bosh::Dev
       it 'redirects output if logfile passed' do
         expect(runner.unit_cmd('potato.log')).to eq 'rspec --tty --backtrace -c -f p spec > potato.log 2>&1'
       end
+
+      context 'when running only failed' do
+        subject(:runner) { TestRunner.new(true) }
+
+        it 'adds --only-failures flag' do
+          expect(runner.unit_cmd).to eq('rspec --tty --backtrace -c -f p spec --only-failures')
+        end
+      end
     end
 
     describe '#unit_exec' do

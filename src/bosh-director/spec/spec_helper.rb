@@ -210,6 +210,8 @@ SpecHelper.init
 BD = Bosh::Director
 
 RSpec.configure do |rspec|
+  rspec.example_status_persistence_file_path = '/tmp/director-examples.txt'
+
   rspec.around(:each) do |example|
     SpecHelper.reset_database(example)
   end

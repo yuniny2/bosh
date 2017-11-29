@@ -2,6 +2,10 @@ require 'common/thread_pool'
 
 module Bosh::Dev
   class TestRunner
+    def initialize(run_only_failed=false)
+      @run_only_failed = run_only_failed
+    end
+
     def ruby
       log_dir = Dir.mktmpdir
       puts "Logging spec results in #{log_dir}"
@@ -38,6 +42,7 @@ module Bosh::Dev
     def unit_cmd(log_file = nil)
       "".tap do |cmd|
         cmd << 'rspec --tty --backtrace -c -f p spec'
+        cmd << ' --only-failures' if @run_only_failed
         cmd << " > #{log_file} 2>&1" if log_file
       end
     end

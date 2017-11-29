@@ -1,8 +1,6 @@
-require 'rspec'
-require 'yaml'
+require 'spec_helper'
 
 describe 'director job spec' do
-
   let(:spec_yaml) { YAML.load_file(File.join(File.dirname(__FILE__), '../jobs/director/spec')) }
 
   it 'defaults director.trusted_certs to empty string' do

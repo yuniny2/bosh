@@ -114,6 +114,7 @@ def valid_config
 end
 
 RSpec.configure do |rspec|
+  rspec.example_status_persistence_file_path = '/tmp/registry-examples.txt'
   rspec.before(:each) do
     SpecHelper.reset
     Bosh::Registry.logger = MonoLogger.new(StringIO.new)

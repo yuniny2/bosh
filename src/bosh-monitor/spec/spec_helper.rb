@@ -89,6 +89,8 @@ def find_free_tcp_port
 end
 
 RSpec.configure do |c|
+  c.example_status_persistence_file_path = '/tmp/monitor-examples.txt'
+
   c.color = true
 
   # Could not use after hook because the tests can start EM in an around block

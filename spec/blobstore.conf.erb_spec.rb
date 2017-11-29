@@ -1,8 +1,4 @@
-require 'rspec'
-require 'yaml'
-require 'json'
-require 'bosh/template/evaluation_context'
-require_relative './template_example_group'
+require 'spec_helper'
 
 describe 'blobstore.conf.erb' do
   context 'allow_http is true' do

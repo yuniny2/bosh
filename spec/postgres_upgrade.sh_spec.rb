@@ -1,5 +1,4 @@
-require 'open3'
-require 'fileutils'
+require 'spec_helper'
 
 describe 'postgres_ctl.erb' do
   context 'running postgres_db_backup.sh' do

@@ -1,7 +1,4 @@
-require 'rspec'
-require 'yaml'
-require 'bosh/template/evaluation_context'
-require 'json'
+require 'spec_helper'
 
 describe 'registry.yml.erb' do
   let(:deployment_manifest_fragment) do

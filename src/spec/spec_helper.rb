@@ -27,6 +27,8 @@ module Bosh
 end
 
 RSpec.configure do |c|
+  c.example_status_persistence_file_path = '/tmp/integration-examples.txt'
+
   c.filter_run :focus => true if ENV['FOCUS']
   c.filter_run_excluding :db => :postgresql unless ENV['DB'] == 'postgresql'
   c.include BlueShell::Matchers

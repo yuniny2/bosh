@@ -160,6 +160,8 @@ module Bosh::Director
         instance_model.deployment,
         instance_model.spec,
         availability_zone,
+        #TODO: if this needs to be use the strategy that the instance was deployed with,
+        # should we persist strategy on the instance model or get it from somewhere else?
         'legacy',
         @logger
       )

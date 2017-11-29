@@ -92,6 +92,25 @@ module Bosh::Director
           return
         end
 
+
+        #TODO: implement the following behavior
+        # new_vm = false
+        # if hotswap || recreate?
+        #   DetachDiskStep.new(whatever_args).perform
+        #   if !hotswap
+        #     DeleteOldVmStep.new(args).perform
+        #     CreateNewVmStep.new(args).perform
+        #   else
+        #     OrphanVmStep.new(old_vm).perform
+        #   end
+        #   ActivateVmStep.new(instance.get_most_recent_inactive_vm, any_other_args).perform
+        #   PrepareInstanceStep.new(instance_plan, true).perform
+        #   AttachDiskStep.new(args).perform
+        #   new_vm = true
+        # end
+
+
+        # This block will be replaced by the above hotswap block
         recreated = false
         if needs_recreate?(instance_plan)
           @logger.debug('Failed to update in place. Recreating VM')

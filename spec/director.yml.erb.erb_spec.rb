@@ -1,9 +1,4 @@
-require 'rspec'
-require 'yaml'
-require 'json'
-require 'bosh/template/test'
-require 'bosh/template/evaluation_context'
-require_relative './template_example_group'
+require 'spec_helper'
 
 describe 'director.yml.erb.erb' do
   let(:merged_manifest_properties) do

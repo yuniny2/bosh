@@ -49,8 +49,17 @@ describe Bhm::Plugins::ProcessManager do
     expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).at_least(2).times.with('/non-existent-plugin').and_call_original
 
     EM.run do
-      allow(EventMachine).to receive(:add_timer).with(0.1).twice.and_yield
-      expect(EventMachine).to receive(:add_timer) { EM.stop }
+      timer_count = 0
+      allow(EventMachine).to receive(:add_timer) { EM.stop }
+      allow(EventMachine).to receive(:add_timer).with(0.1).and_wrap_original do |orig, *args|
+        if timer_count > 1
+          EM.stop
+        else
+          orig.call(*args)
+        end
+
+        timer_count += 1
+      end
       process_manager.start
     end
   end

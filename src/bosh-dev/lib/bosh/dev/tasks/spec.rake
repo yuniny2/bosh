@@ -132,29 +132,41 @@ namespace :spec do
   task :upgrade => %w(spec:integration:upgrade)
 
   desc 'Run all release unit tests (ERB templates)'
-  task :release_unit do
-    puts "Release unit tests (ERB templates)"
-    sh("cd .. && rspec --tty --backtrace -c -f p spec/")
+  task :release_unit, :only_failures do |_, args|
+    run_only_failures = args[:only_failures] == 'true'
+
+    puts 'Release unit tests (ERB templates)'
+
+    cmd = 'cd .. && rspec --tty --backtrace -c -f p spec/'
+    cmd << ' --only-failures' if run_only_failures
+
+    sh(cmd)
   end
 
   desc 'Run template test unit tests (i.e. Bosh::Template::Test)'
   task :template_test_unit do
-    puts "Template test unit tests (ERB templates)"
-    sh("rspec bosh-template/spec/assets/template-test-release/src/spec/config.erb_spec.rb")
+    puts 'Template test unit tests (ERB templates)'
+    sh('rspec bosh-template/spec/assets/template-test-release/src/spec/config.erb_spec.rb')
   end
 
   namespace :unit do
     runner = Bosh::Dev::TestRunner.new
 
     desc 'Run all unit tests for ruby components'
-    task :ruby do
+    task :ruby, :only_failures do |_, args|
+      run_only_failures = args[:only_failures] == 'true'
+
+      runner = Bosh::Dev::TestRunner.new(run_only_failures)
       trap('INT') { exit }
       runner.ruby
     end
 
     runner.unit_builds.each do |build|
       desc "Run unit tests for the #{build} component"
-      task build.sub(/^bosh[_-]/, '').intern do
+      task build.sub(/^bosh[_-]/, '').intern, :only_failures do |_, args|
+        run_only_failures = args[:only_failures] == 'true'
+
+        runner = Bosh::Dev::TestRunner.new(run_only_failures)
         trap('INT') { exit }
         runner.unit_exec(build)
       end
@@ -168,8 +180,8 @@ namespace :spec do
     end
   end
 
-  desc "Run all unit tests"
-  task :unit => %w(spec:release_unit spec:unit:ruby spec:template_test_unit)
+  desc 'Run all unit tests'
+  task :unit, [:only_failures] => %w(spec:release_unit spec:unit:ruby spec:template_test_unit)
 end
 
 desc 'Run unit and gocli integration specs'
