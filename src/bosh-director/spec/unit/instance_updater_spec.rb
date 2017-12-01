@@ -159,16 +159,19 @@ module Bosh::Director
         let(:instance_desired_state) { 'detached' }
         let(:director_state_updater) { instance_double(DirectorDnsStateUpdater) }
         let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountDisksStep) }
+        # let(:detach_step) { instance_double(DeploymentPlan::Steps::DetachDisksStep) }
 
         before do
           allow(DirectorDnsStateUpdater).to receive(:new).and_return(director_state_updater)
           allow(instance_plan).to receive(:dns_changed?).and_return(true)
           allow(DeploymentPlan::Steps::UnmountDisksStep).to receive(:new).with(instance_plan).and_return(unmount_step)
+          # allow(DeploymentPlan::Steps::DetachDisksStep).to receive(:new).with(instance_plan).and_return(detach_step)
         end
 
         it 'should update dns' do
           allow(instance_plan).to receive(:already_detached?).and_return(false)
           expect(unmount_step).to receive(:perform)
+          # expect(detach_step).to receive(:perform)
           expect(vm_deleter).to receive(:delete_for_instance).with(instance_model)
           expect(director_state_updater).to receive(:update_dns_for_instance).with(instance_model, instance_plan.network_settings.dns_record_info)
 
@@ -211,11 +214,13 @@ module Bosh::Director
         let(:disk_manager) { instance_double(DiskManager) }
         let(:state_applier) { instance_double(InstanceUpdater::StateApplier) }
         let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountDisksStep) }
+        let(:detach_step) { instance_double(DeploymentPlan::Steps::DetachDisksStep) }
 
         before do
           allow(DiskManager).to receive(:new).and_return(disk_manager)
           allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier)
           allow(DeploymentPlan::Steps::UnmountDisksStep).to receive(:new).with(instance_plan).and_return(unmount_step)
+          allow(DeploymentPlan::Steps::DetachDisksStep).to receive(:new).with(instance_plan).and_return(detach_step)
         end
 
         it 'does NOT drain, stop, snapshot, but persists rendered templates to the blobstore and updates DNS' do
@@ -254,11 +259,12 @@ module Bosh::Director
           before do
             allow(updater).to receive(:needs_recreate?).and_return(true)
             allow(disk_manager).to receive(:update_persistent_disk)
-            allow(unmount_step).to receive(:perform)
             allow(job).to receive(:update)
           end
 
           it 'recreates correctly, and persists rendered templates to the blobstore' do
+            expect(unmount_step).to receive(:perform)
+            expect(detach_step).to receive(:perform)
             expect(vm_deleter).to receive(:delete_for_instance).with(instance_model)
             expect(vm_creator).to receive(:create_for_instance_plan).with(instance_plan, [persistent_disk_model.disk_cid], tags)
 

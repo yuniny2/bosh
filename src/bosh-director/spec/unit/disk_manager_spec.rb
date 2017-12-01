@@ -7,14 +7,14 @@ module Bosh::Director
     let(:cloud) { Config.cloud }
     let(:enable_cpi_resize_disk) { false }
     let(:cloud_factory) { instance_double(CloudFactory) }
-    let(:instance_plan) { DeploymentPlan::InstancePlan.new({
-        existing_instance: instance_model,
-        desired_instance: DeploymentPlan::DesiredInstance.new(instance_group),
-        instance: instance,
-        network_plans: [],
-        tags: tags,
-      }) }
-    let(:tags) {{'tags' => {'mytag' => 'myvalue'}}}
+    let(:instance_plan) do
+      DeploymentPlan::InstancePlan.new(existing_instance: instance_model,
+                                       desired_instance: DeploymentPlan::DesiredInstance.new(instance_group),
+                                       instance: instance,
+                                       network_plans: [],
+                                       tags: tags)
+    end
+    let(:tags) { { 'tags' => { 'mytag' => 'myvalue' } } }
 
     let(:job_persistent_disk_size) { 1024 }
     let(:instance_group) do
@@ -28,20 +28,20 @@ module Bosh::Director
     let(:deployment_model) { Models::Deployment.make(name: 'dep1') }
     let(:instance) { DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment_model, {}, nil, logger) }
     let(:instance_model) do
-      instance = Models::Instance.make(uuid: 'my-uuid-1', availability_zone: 'az1', variable_set_id: 10, )
+      instance = Models::Instance.make(uuid: 'my-uuid-1', availability_zone: 'az1', variable_set_id: 10)
       Models::Vm.make(cid: 'vm234', instance_id: instance.id, active: true, cpi: 'vm-cpi')
       instance.add_persistent_disk(persistent_disk) if persistent_disk
       instance
     end
 
     let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, name: disk_name, cloud_properties: cloud_properties, active: true, cpi: 'disk-cpi') }
-    let(:cloud_properties) { {'cloud' => 'properties'} }
+    let(:cloud_properties) { { 'cloud' => 'properties' } }
     let(:disk_name) { '' }
     let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
 
-    let(:event_manager) {Api::EventManager.new(true)}
-    let(:task_id) {42}
-    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager)}
+    let(:event_manager) { Api::EventManager.new(true) }
+    let(:task_id) { 42 }
+    let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager) }
 
     before do
       instance.bind_existing_instance_model(instance_model)
@@ -89,8 +89,8 @@ module Bosh::Director
       it 'sets disk metadata with deployment information' do
         allow(cloud_factory).to receive(:get).and_return(cloud)
         allow(cloud).to receive(:attach_disk)
-        expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata).with(cloud, persistent_disk, {'mytag' => 'myvalue'})
-        disk_manager.attach_disk(persistent_disk, {'mytag' => 'myvalue'})
+        expect_any_instance_of(Bosh::Director::MetadataUpdater).to receive(:update_disk_metadata).with(cloud, persistent_disk, 'mytag' => 'myvalue')
+        disk_manager.attach_disk(persistent_disk, 'mytag' => 'myvalue')
       end
     end
 
@@ -135,7 +135,6 @@ module Bosh::Director
       end
 
       context 'when `enable_cpi_disk_resize` is enabled' do
-
         let(:enable_cpi_resize_disk) { true }
         let(:job_persistent_disk_size) { 4096 }
 
@@ -182,14 +181,13 @@ module Bosh::Director
               let(:disk_name) { '' }
 
               it 'does not use cpi resize_disk' do
-                expect {
+                expect do
                   disk_manager.update_persistent_disk(instance_plan)
-                }.not_to raise_error
+                end.not_to raise_error
 
                 expect(cloud).to_not have_received(:resize_disk)
               end
             end
-
           end
         end
 
@@ -201,7 +199,7 @@ module Bosh::Director
 
             expect(cloud).to have_received(:detach_disk).with('vm234', 'disk123').twice
             expect(cloud).to have_received(:resize_disk)
-            expect(cloud).to have_received(:create_disk).with(4096, {'cloud' => 'properties'}, 'vm234')
+            expect(cloud).to have_received(:create_disk).with(4096, { 'cloud' => 'properties' }, 'vm234')
             expect(cloud).to have_received(:attach_disk).with('vm234', 'disk123')
             expect(cloud).to have_received(:attach_disk).with('vm234', 'new-disk-cid')
           end
@@ -217,7 +215,7 @@ module Bosh::Director
 
             expect(cloud).to have_received(:detach_disk).with('vm234', 'disk123').twice
             expect(cloud).to have_received(:resize_disk)
-            expect(cloud).to have_received(:create_disk).with(512, {'cloud' => 'properties'}, 'vm234')
+            expect(cloud).to have_received(:create_disk).with(512, { 'cloud' => 'properties' }, 'vm234')
             expect(cloud).to have_received(:attach_disk).with('vm234', 'disk123')
             expect(cloud).to have_received(:attach_disk).with('vm234', 'new-disk-cid')
           end
@@ -230,9 +228,9 @@ module Bosh::Director
 
           it 'should raise the error' do
             expect(cloud).to receive(:create_disk).and_raise(error)
-            expect {
+            expect do
               disk_manager.update_persistent_disk(instance_plan)
-            }.to raise_error error
+            end.to raise_error error
           end
         end
       end
@@ -243,9 +241,9 @@ module Bosh::Director
         it 'orphans the disk' do
           expect(cloud).to receive(:attach_disk).and_raise(error)
 
-          expect {
+          expect do
             disk_manager.update_persistent_disk(instance_plan)
-          }.to raise_error error
+          end.to raise_error error
         end
       end
 
@@ -256,31 +254,28 @@ module Bosh::Director
 
         context 'when uuid has not been set' do
           it 'raises' do
-            expect {
+            expect do
               disk_manager.update_persistent_disk(instance_plan)
-            }.to raise_error AgentDiskOutOfSync, "'job-name/my-uuid-1 (1)' has invalid disks: agent reports 'random-disk-cid' while director record shows 'disk123'"
+            end.to raise_error AgentDiskOutOfSync, "'job-name/my-uuid-1 (1)' has invalid disks: agent reports 'random-disk-cid' while director record shows 'disk123'"
           end
         end
 
         context 'when uuid has been set' do
-
-          let(:instance_plan) {
-            instance_model.uuid = "123-456-789"
+          let(:instance_plan) do
+            instance_model.uuid = '123-456-789'
             instance = DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', nil, {}, nil, logger)
             instance.bind_existing_instance_model(instance_model)
 
-            DeploymentPlan::InstancePlan.new({
-               existing_instance: instance_model,
-               desired_instance: DeploymentPlan::DesiredInstance.new(instance_group),
-               instance: instance,
-               network_plans: [],
-            })
-          }
+            DeploymentPlan::InstancePlan.new(existing_instance: instance_model,
+                                             desired_instance: DeploymentPlan::DesiredInstance.new(instance_group),
+                                             instance: instance,
+                                             network_plans: [])
+          end
 
           it 'raises' do
-            expect {
+            expect do
               disk_manager.update_persistent_disk(instance_plan)
-            }.to raise_error AgentDiskOutOfSync, "'job-name/123-456-789 (1)' has invalid disks: agent reports 'random-disk-cid' while director record shows 'disk123'"
+            end.to raise_error AgentDiskOutOfSync, "'job-name/123-456-789 (1)' has invalid disks: agent reports 'random-disk-cid' while director record shows 'disk123'"
           end
         end
       end
@@ -292,7 +287,7 @@ module Bosh::Director
             active: false,
             instance: instance_model,
             size: 54,
-            cloud_properties: {'cloud-props' => 'something'},
+            cloud_properties: { 'cloud-props' => 'something' },
             cpi: 'inactive-cpi'
           )
         end
@@ -303,17 +298,18 @@ module Bosh::Director
         end
 
         it 'stores events' do
-          expect {
+          expect do
             disk_manager.update_persistent_disk(instance_plan)
-          }.to change {
-          Bosh::Director::Models::Event.count }.from(0).to(6)
+          end.to change {
+            Bosh::Director::Models::Event.count
+          }.from(0).to(6)
 
           event_1 = Bosh::Director::Models::Event.first
           expect(event_1.user).to eq('user')
           expect(event_1.action).to eq('create')
           expect(event_1.object_type).to eq('disk')
           expect(event_1.object_name).to eq(nil)
-          expect(event_1.task).to eq("#{task_id}")
+          expect(event_1.task).to eq(task_id.to_s)
           expect(event_1.deployment).to eq(instance_model.deployment.name)
           expect(event_1.instance).to eq(instance_model.name)
 
@@ -323,16 +319,16 @@ module Bosh::Director
           expect(event_2.action).to eq('create')
           expect(event_2.object_type).to eq('disk')
           expect(event_2.object_name).to eq('new-disk-cid')
-          expect(event_2.task).to eq("#{task_id}")
+          expect(event_2.task).to eq(task_id.to_s)
           expect(event_2.deployment).to eq(instance_model.deployment.name)
           expect(event_2.instance).to eq(instance_model.name)
         end
 
         it 'stores events with error information' do
           allow(cloud).to receive(:create_disk).and_raise(Exception, 'error')
-          expect {
+          expect do
             disk_manager.update_persistent_disk(instance_plan)
-          }.to raise_error Exception, 'error'
+          end.to raise_error Exception, 'error'
 
           event_2 = Bosh::Director::Models::Event.order(:id)[2]
           expect(event_2.error).to eq('error')
@@ -343,14 +339,14 @@ module Bosh::Director
 
           context 'when the instance group has persistent disk type and the disk type is non zero' do
             it 'calls to the cpi to create the disk specified by the job' do
-              expect(cloud).to receive(:create_disk).with(1024, {'cloud' => 'properties'}, 'vm234').and_return('new-disk-cid')
+              expect(cloud).to receive(:create_disk).with(1024, { 'cloud' => 'properties' }, 'vm234').and_return('new-disk-cid')
               disk_manager.update_persistent_disk(instance_plan)
             end
 
             it 'creates a persistent disk record' do
               disk_manager.update_persistent_disk(instance_plan)
               model = Models::PersistentDisk.where(instance_id: instance_model.id, size: 1024).first
-              expect(model.cloud_properties).to eq({'cloud' => 'properties'})
+              expect(model.cloud_properties).to eq('cloud' => 'properties')
               expect(model.cpi).to eq('vm-cpi')
             end
 
@@ -367,9 +363,9 @@ module Bosh::Director
               end
 
               it 'raises the error' do
-                expect {
+                expect do
                   disk_manager.update_persistent_disk(instance_plan)
-                }.to raise_error no_space
+                end.to raise_error no_space
               end
             end
 
@@ -449,7 +445,7 @@ module Bosh::Director
                       expect(orphan_disk.availability_zone).to eq(instance_model.availability_zone)
                       expect(orphan_disk.deployment_name).to eq(instance_model.deployment.name)
                       expect(orphan_disk.instance_name).to eq("#{instance_model.job}/#{instance_model.uuid}")
-                      expect(orphan_disk.cloud_properties).to eq({'cloud-props' => 'something'})
+                      expect(orphan_disk.cloud_properties).to eq('cloud-props' => 'something')
                       expect(orphan_disk.cpi).to eq('inactive-cpi')
                     end
                   end
@@ -464,9 +460,9 @@ module Bosh::Director
                   it 'detaches the disk and re-raises the error' do
                     expect(agent_client).to_not receive(:unmount_disk)
                     expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
-                    expect {
+                    expect do
                       disk_manager.update_persistent_disk(instance_plan)
-                    }.to raise_error disk_error
+                    end.to raise_error disk_error
                   end
                 end
 
@@ -480,9 +476,9 @@ module Bosh::Director
                   it 'deletes the disk and re-raises the error' do
                     expect(agent_client).to receive(:unmount_disk).with('new-disk-cid')
                     expect(cloud).to receive(:detach_disk).with('vm234', 'new-disk-cid')
-                    expect {
+                    expect do
                       disk_manager.update_persistent_disk(instance_plan)
-                    }.to raise_error disk_error
+                    end.to raise_error disk_error
                     expect(Models::PersistentDisk.where(disk_cid: 'new-disk-cid').all).to eq([])
                   end
                 end
@@ -534,9 +530,9 @@ module Bosh::Director
           let(:job_persistent_disk_size) { 100 }
 
           it 'raises' do
-            expect {
+            expect do
               disk_manager.update_persistent_disk(instance_plan)
-            }.to raise_error AgentDiskOutOfSync, "'job-name/my-uuid-1 (1)' has invalid disks: agent reports '' while director record shows 'disk123'"
+            end.to raise_error AgentDiskOutOfSync, "'job-name/my-uuid-1 (1)' has invalid disks: agent reports '' while director record shows 'disk123'"
           end
         end
       end
@@ -545,9 +541,9 @@ module Bosh::Director
         let(:persistent_disk) { nil }
 
         it 'does not raise' do
-          expect {
+          expect do
             disk_manager.update_persistent_disk(instance_plan)
-          }.not_to raise_error
+          end.not_to raise_error
         end
       end
 
@@ -555,8 +551,8 @@ module Bosh::Director
         let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
         let(:config_server_client) { double(Bosh::Director::ConfigServer::ConfigServerClient) }
 
-        let(:cloud_properties) { {'cloud' => '((cloud_placeholder))'} }
-        let(:interpolated_cloud_properties) { {'cloud' => 'unicorns'} }
+        let(:cloud_properties) { { 'cloud' => '((cloud_placeholder))' } }
+        let(:interpolated_cloud_properties) { { 'cloud' => 'unicorns' } }
 
         let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
@@ -576,9 +572,9 @@ module Bosh::Director
 
           expect(cloud).to receive(:create_disk).with(job_persistent_disk_size, interpolated_cloud_properties, instance_model.active_vm.cid).and_return('new-disk-cid')
 
-          expect {
+          expect do
             disk_manager.update_persistent_disk(instance_plan)
-          }.to_not raise_error
+          end.to_not raise_error
         end
 
         it 'does not save PersistentDisk model with the interpolated cloud config' do

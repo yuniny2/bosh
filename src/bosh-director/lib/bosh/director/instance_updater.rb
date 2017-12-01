@@ -92,17 +92,36 @@ module Bosh::Director
           return
         end
 
+        # TODO: implement the following behavior
+        # new_vm = false
+        # if hotswap || recreate?
+        #   DetachDiskStep.new(whatever_args).perform
+        #   if !hotswap
+        #     DeleteOldVmStep.new(args).perform
+        #     CreateActiveVmStep.new(args).perform
+        #   end
+        #   ActivateVmStep.new(instance.get_most_recent_inactive_vm, any_other_args).perform
+        #   if hotswap
+        #     OrphanVmStep
+        #   end
+        #   PrepareInstanceStep.new(instance_plan, true).perform
+        #   AttachDiskStep.new(args).perform
+        #   new_vm = true
+        # end
+
+        # This block will be replaced by the above hotswap block
         recreated = false
         if needs_recreate?(instance_plan)
           @logger.debug('Failed to update in place. Recreating VM')
           DeploymentPlan::Steps::UnmountDisksStep.new(instance_plan).perform unless instance_plan.needs_to_fix?
+          DeploymentPlan::Steps::DetachDisksStep.new(instance_plan).perform
           tags = instance_plan.tags
 
           instance_model = instance_plan.instance.model
+          disks = instance_model.active_persistent_disks.collection
+                                .map(&:model)
+                                .map(&:disk_cid).compact
           @vm_deleter.delete_for_instance(instance_model)
-          disks = instance_model.active_persistent_disks.collection.
-            map(&:model).
-            map(&:disk_cid).compact
           @vm_creator.create_for_instance_plan(instance_plan, disks, tags)
 
           recreated = true
@@ -113,9 +132,7 @@ module Bosh::Director
         update_dns(instance_plan)
         @disk_manager.update_persistent_disk(instance_plan)
 
-        unless recreated
-          instance.update_instance_settings
-        end
+        instance.update_instance_settings unless recreated
 
         cleaner = RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger)
 
@@ -139,34 +156,33 @@ module Bosh::Director
 
     def add_event(deployment_name, action, instance_name = nil, context = nil, parent_id = nil, error = nil)
       event = Config.current_job.event_manager.create_event(
-        {
-          parent_id: parent_id,
-          user: Config.current_job.username,
-          action: action,
-          object_type: 'instance',
-          object_name: instance_name,
-          task: Config.current_job.task_id,
-          deployment: deployment_name,
-          instance: instance_name,
-          error: error,
-          context: context ? context : {}
-        })
+        parent_id: parent_id,
+        user: Config.current_job.username,
+        action: action,
+        object_type: 'instance',
+        object_name: instance_name,
+        task: Config.current_job.task_id,
+        deployment: deployment_name,
+        instance: instance_name,
+        error: error,
+        context: context ? context : {}
+      )
       event.id
     end
 
     def get_action_and_context(instance_plan)
       changes = instance_plan.changes
       context = {}
-      if changes.size == 1 && [:state, :restart].include?(changes.first)
+      if changes.size == 1 && %i[state restart].include?(changes.first)
         action = case instance_plan.instance.virtual_state
-                   when 'started'
-                     'start'
-                   when 'stopped'
-                     'stop'
-                   when 'detached'
-                     'stop'
-                   else
-                     instance_plan.instance.virtual_state
+                 when 'started'
+                   'start'
+                 when 'stopped'
+                   'stop'
+                 when 'detached'
+                   'stop'
+                 else
+                   instance_plan.instance.virtual_state
                  end
       else
         context['az'] = instance_plan.desired_az_name if instance_plan.desired_az_name
@@ -177,7 +193,7 @@ module Bosh::Director
           action = needs_recreate?(instance_plan) ? 'recreate' : 'update'
         end
       end
-      return action, context
+      [action, context]
     end
 
     def stop(instance_plan)
