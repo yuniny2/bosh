@@ -58,6 +58,10 @@ module Bosh::Director
       def manual?
         false
       end
+
+      def shared?
+        false
+      end
     end
 
     class NetworkWithSubnets < Network

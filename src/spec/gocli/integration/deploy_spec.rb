@@ -7,34 +7,121 @@ describe 'deploy', type: :integration do
 
     context 'when there are template errors' do
       it 'prints all template evaluation errors and does not register an event' do
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-        manifest_hash['instance_groups'] = [
-          {
-            'name' => 'foobar',
-            'jobs' => ['name' => 'foobar_with_bad_properties'],
-            'vm_type' => 'a',
-            'instances' => 1,
-            'networks' => [{
-              'name' => 'a',
-            }],
-            'properties' => {},
-            'stemcell' => 'default'
-          }
-        ]
+        manifest_yaml = <<-YAML
+---
+name: dummy
+
+releases:
+- name: bosh-release
+  version: 0.1-dev
+
+stemcells:
+- alias: default
+  name: ubuntu-stemcell
+  version: 1
+
+instance_groups:
+- name: foobar
+  azs: [test-multi-cpi]
+  instances: 2
+  jobs:
+  - name: foobar
+    release: bosh-release
+  vm_type: default
+  stemcell: default
+  networks:
+  - name: default
+    default: [gateway, dns]
+  - name: test
+    static_ips: [10.0.1.211, 10.0.1.211]
+
+update:
+  canaries: 1
+  canary_watch_time: 30000-240000
+  update_watch_time: 30000-600000
+  max_in_flight: 3
+        YAML
+        manifest_hash = YAML.load(manifest_yaml)
+
+        #manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        # manifest_hash['instance_groups'] = [
+        #   {
+        #     'name' => 'foobar',
+        #     'jobs' => ['name' => 'foobar_with_bad_properties'],
+        #     'vm_type' => 'a',
+        #     'instances' => 1,
+        #     'networks' => [{
+        #       'name' => 'a',
+        #     }],
+        #     'properties' => {},
+        #     'stemcell' => 'default'
+        #   }
+        # ]
+
+        cc_yaml = <<-YAML
+---
+azs:
+- name: test-multi-cpi
+  cpi: test-multi-cpi
+  cloud_properties:
+    availability_zone: nova
+
+vm_types:
+- name: default
+  cloud_properties:
+    instance_type: m1.small
+
+networks:
+- name: default
+  type: manual
+  subnets:
+    - az: test-multi-cpi
+      range: 10.0.1.0/24
+      reserved:
+      - 10.0.1.10
+      - 10.0.1.100 - 10.0.1.200
+      dns: [172.16.0.1]
+      gateway: 10.0.1.1
+      cloud_properties:
+        security_groups: [default, bosh]
+        net_id: 7606266f-5841-4da2-8ba0-fe6e9e524614
+- name: dynamic
+  type: dynamic
+  subnets:
+  - az: test-multi-cpi
+    cloud_properties:
+      security_groups: [default, bosh]
+      net_id: 7606266f-5841-4da2-8ba0-fe6e9e524614
+#- name: public
+#  type: vip
+#  static: [10.0.1.211]
+#  cloud_properties:
+#    shared: true
+- name: test
+  type: shared
+  static: [10.0.1.211]
+  cloud_properties:
+    test: test-value
+
+compilation:
+  workers: 2
+  reuse_compilation_vms: true
+  vm_type: default
+  network: default
+  az: test-multi-cpi
+        YAML
+        cc_hash = YAML.load(cc_yaml)
+
 
         output = deploy_from_scratch(
           manifest_hash: manifest_hash,
-          cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+          cloud_config_hash: cc_hash,
           failure_expected: true,
           dry_run: true
         )
 
         expect(output).to include <<-EOF
-Error: Unable to render instance groups for deployment. Errors are:
-  - Unable to render jobs for instance group 'foobar'. Errors are:
-    - Unable to render templates for job 'foobar_with_bad_properties'. Errors are:
-      - Error filling in template 'foobar_ctl' (line 8: Can't find property '["test_property"]')
-      - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
+hello
         EOF
 
         expect(director.vms.length).to eq(0)

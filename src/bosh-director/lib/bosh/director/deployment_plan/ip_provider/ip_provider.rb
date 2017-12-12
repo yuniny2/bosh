@@ -34,6 +34,8 @@ module Bosh::Director
           return
         end
 
+        return if reservation.network.is_a?(SharedNetwork)
+
         # Reserve IP for Manual Network
         if reservation.ip.nil?
           @logger.debug("Allocating dynamic ip for manual network '#{reservation.network.name}'")

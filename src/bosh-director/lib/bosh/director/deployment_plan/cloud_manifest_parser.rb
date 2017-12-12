@@ -64,6 +64,8 @@ module Bosh::Director
               DynamicNetwork.parse(network_spec, availability_zones, @logger)
             when 'vip'
               VipNetwork.new(network_spec, @logger)
+            when 'shared'
+              SharedNetwork.new(network_spec, @logger)
             else
               raise DeploymentInvalidNetworkType,
                 "Invalid network type '#{type}'"

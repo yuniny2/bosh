@@ -33,7 +33,9 @@ module Bosh::Director::DeploymentPlan
         if existing_instance
           existing_instance_ip = find_ip_for_network(existing_instance, network_name)
           if existing_instance_ip && static_ips.include?(existing_instance_ip)
-            static_ips.delete(existing_instance_ip)
+            idx = static_ips.find_index(existing_instance_ip)
+            static_ips.delete_at(idx)
+            #static_ips.delete(existing_instance_ip)
             return existing_instance_ip
           end
         end
