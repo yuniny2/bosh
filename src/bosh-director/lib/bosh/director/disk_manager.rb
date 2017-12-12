@@ -63,7 +63,7 @@ module Bosh::Director
     end
 
     def attach_disk(disk, tags)
-      DeploymentPlan::Steps::AttachDiskStep.new(disk, tags).perform
+      DeploymentPlan::Steps::AttachDiskStep.new(disk, disk.instance.active_vm, tags).perform
       mount_disk(disk) if disk.managed?
     end
 

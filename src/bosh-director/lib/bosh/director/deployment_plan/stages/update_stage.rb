@@ -15,13 +15,18 @@ module Bosh::Director
             @logger.info('Updating deployment')
             PreCleanupStage.new(@logger, @deployment_plan).perform
             UpdateActiveVmCpisStage.new(@logger, @deployment_plan).perform
+
+            # these two stages (almost) only affect new vms
             setup_stage.perform
             DownloadPackagesStage.new(@base_job, @deployment_plan).perform
+
             UpdateJobsStage.new(@base_job, @deployment_plan, @multi_job_updater).perform
             UpdateErrandsStage.new(@base_job, @deployment_plan).perform
             @logger.info('Committing updates')
             PersistDeploymentStage.new(@deployment_plan).perform
             @logger.info('Finished updating deployment')
+          rescue => e
+            raise e
           ensure
             CleanupStemcellReferencesStage.new(@deployment_plan).perform
           end

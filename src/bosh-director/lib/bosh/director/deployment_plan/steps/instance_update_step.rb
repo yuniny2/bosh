@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
     module Steps
-      class AttachDiskStep
+      class InstanceUpdateStep
         def initialize(disk, vm, tags)
           @disk = disk
           @logger = Config.logger

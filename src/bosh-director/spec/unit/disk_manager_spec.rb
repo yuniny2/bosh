@@ -71,7 +71,7 @@ module Bosh::Director
 
       before do
         allow(DeploymentPlan::Steps::AttachDiskStep).to receive(:new)
-          .with(persistent_disk, tags).and_return(attach_step)
+          .with(persistent_disk, instance_model.active_vm, tags).and_return(attach_step)
       end
 
       context 'managed disks' do

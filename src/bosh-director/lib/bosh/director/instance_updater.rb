@@ -43,6 +43,8 @@ module Bosh::Director
       parent_id = add_event(instance.deployment_model.name, action, instance.model.name, context) if instance_plan.changed?
       @logger.info("Updating instance #{instance}, changes: #{instance_plan.changes.to_a.join(', ').inspect}")
 
+
+
       update_procedure = lambda do
         # Optimization to only update DNS if nothing else changed.
         if dns_change_only?(instance_plan)
@@ -65,7 +67,7 @@ module Bosh::Director
 
           # current state
           if instance.model.state != 'stopped'
-            stop(instance_plan)
+            stop(instance_plan) # stop vm instead
             take_snapshot(instance)
           end
 
@@ -92,6 +94,27 @@ module Bosh::Director
           return
         end
 
+        # if it is hotswap, we know that by know we already have a VM to use
+
+
+        # TODO: implement the following behavior
+        # new_vm = false
+        # if hotswap || recreate?
+        #   DetachDiskStep.new(whatever_args).perform
+        #   if !hotswap
+        #     DeleteOldVmStep.new(args).perform
+        #     CreateVmStep.new(args).perform
+        #   end
+        #   ActivateVmStep.new(instance.get_most_recent_inactive_vm, any_other_args).perform
+        #   if hotswap
+        #     OrphanVmStep
+        #   end
+        #   PrepareInstanceStep.new(instance_plan, true).perform
+        #   AttachDiskStep.new(args).perform
+        #   new_vm = true
+        # end
+
+        # This block will be replaced by the above hotswap block
         recreated = false
         if needs_recreate?(instance_plan)
           instance_model = instance_plan.instance.model
@@ -108,6 +131,11 @@ module Bosh::Director
                                 .map(&:disk_cid).compact
           @vm_deleter.delete_for_instance(instance_model)
           @vm_creator.create_for_instance_plan(instance_plan, disks, tags)
+          # CreateVmStep.new.perform
+          # # there is 1 VM associated with this instance, and it is unused & not active
+          # AttachInstanceDisksStep.new.perform
+
+          # @vm_creator.update_setting
 
           recreated = true
         end
