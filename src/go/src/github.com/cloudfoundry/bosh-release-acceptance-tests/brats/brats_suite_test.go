@@ -74,6 +74,25 @@ func assertEnvExists(envName string) string {
 }
 
 func startInnerBosh(args ...string) {
+	startInnerBoshWithExpectation(false, args...)
+}
+
+func startInnerBoshWithExpectation(expectedFailure bool, args ...string) {
+	cmd := exec.Command(fmt.Sprintf("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), args...)
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, fmt.Sprintf("bosh_release_path=%s", boshDirectorReleasePath))
+
+	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+	Expect(err).ToNot(HaveOccurred())
+
+	if expectedFailure {
+		Eventually(session, 25*time.Minute).ShouldNot(gexec.Exit(0))
+	} else {
+		Eventually(session, 25*time.Minute).Should(gexec.Exit(0))
+	}
+}
+
+func startInnerBosh(expectedErrorCode int, args ...string) {
 	cmd := exec.Command(fmt.Sprintf("../../../../../../../ci/docker/main-bosh-docker/start-inner-bosh.sh"), args...)
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("bosh_release_path=%s", boshDirectorReleasePath))

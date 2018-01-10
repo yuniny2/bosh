@@ -18,14 +18,18 @@ var _ = Describe("Director external database TLS connections", func() {
 		stopInnerBosh()
 	})
 
-	testDBConnectionOverTLS := func(databaseType string, mutualTLSEnabled bool) {
+	testDBConnectionOverTLS := func(databaseType string, mutualTLSEnabled bool, useInvalidCA bool, useIncorrectClientCertAndKey bool) {
 		external_db_host := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_HOST", strings.ToUpper(databaseType)))
 		external_db_user := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_USER", strings.ToUpper(databaseType)))
 		external_db_password := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_PASSWORD", strings.ToUpper(databaseType)))
 		external_db_name := assertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_NAME", strings.ToUpper(databaseType)))
 
 		connectionOptions := fmt.Sprintf("external_db/%s_connection_options.yml", databaseType)
+
 		connectionVarFile := fmt.Sprintf("external_db/%s.yml", databaseType)
+		if useInvalidCA {
+			connectionVarFile = fmt.Sprintf("external_db/%s_invalid_ca.yml", databaseType)
+		}
 
 		startInnerBoshArgs := []string{
 			fmt.Sprintf("-o %s", boshDeploymentAssetPath("misc/external-db.yml")),
@@ -68,22 +72,74 @@ var _ = Describe("Director external database TLS connections", func() {
 			startInnerBoshArgs = append(startInnerBoshArgs, mutualTLSArgs...)
 		}
 
-		startInnerBosh(startInnerBoshArgs...)
+		startInnerBoshWithExpectation(!useInvalidCA, startInnerBoshArgs...)
 
 		uploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
 	}
 
-	DescribeTable("RDS", testDBConnectionOverTLS,
+	Context("RDS", func() {
 		// RDS Mutual TLS not supported
-		Entry("allows TLS connections to MYSQL", "rds_mysql", false),
-		Entry("allows TLS connections to POSTGRES", "rds_postgres", false),
-	)
+		var mutualTLSEnabled = false
+		var useInvalidCA = false
+		var useIncorrectClientCertAndKey = false
 
-	DescribeTable("GCP", testDBConnectionOverTLS,
-		Entry("allows TLS connections to MYSQL", "gcp_mysql", false),
-		Entry("allows TLS connections to POSTGRES", "gcp_postgres", false),
+			DescribeTable("Regular TLS", testDBConnectionOverTLS,
+			Entry("allows TLS connections to MYSQL", "rds_mysql", mutualTLSEnabled, useInvalidCA, useIncorrectClientCertAndKey),
+			Entry("allows TLS connections to POSTGRES", "rds_postgres", mutualTLSEnabled, useInvalidCA, useIncorrectClientCertAndKey),
+		)
+	})
 
-		Entry("allows Mutual TLS connections to MYSQL", "gcp_mysql", true),
-		Entry("allows Mutual TLS connections to POSTGRES", "gcp_postgres", true),
-	)
+	Context("GCP", func() {
+
+		Context("Regular TLS", func() {
+			var mutualTLSEnabled = false
+			var useInvalidCA = false
+			var useIncorrectClientCertAndKey = false
+
+			DescribeTable("DB Connections", testDBConnectionOverTLS,
+				Entry("allows TLS connections to MYSQL", "gcp_mysql", mutualTLSEnabled, useInvalidCA, useIncorrectClientCertAndKey),
+				Entry("allows TLS connections to POSTGRES", "gcp_postgres", mutualTLSEnabled, useInvalidCA, useIncorrectClientCertAndKey),
+			)
+
+			Context("Incorrect CA", func() {
+				useInvalidCA = true
+
+				DescribeTable("DB Connections", testDBConnectionOverTLS,
+					FEntry("fails to connect to MYSQL", "gcp_mysql", mutualTLSEnabled, useInvalidCA, useIncorrectClientCertAndKey),
+					Entry("fails to connect to POSTGRES", "gcp_postgres", mutualTLSEnabled, useInvalidCA, useIncorrectClientCertAndKey),
+				)
+			})
+		})
+
+		Context("Mutual TLS", func() {
+			var mutualTLSEnabled = true
+			var useInvalidCA = false
+			var useIncorrectClientCertAndKey = false
+
+			DescribeTable("DB Connections", testDBConnectionOverTLS,
+				Entry("allows TLS connections to MYSQL", "gcp_mysql", mutualTLSEnabled, useInvalidCA, useIncorrectClientCertAndKey),
+				Entry("allows TLS connections to POSTGRES", "gcp_postgres", mutualTLSEnabled, useInvalidCA, useIncorrectClientCertAndKey),
+			)
+
+			Context("Incorrect client cert and key", func() {
+				useIncorrectClientCertAndKey = true
+
+				DescribeTable("DB Connections", testDBConnectionOverTLS,
+					Entry("fails to connect to MYSQL", "gcp_mysql", mutualTLSEnabled, useInvalidCA, useIncorrectClientCertAndKey),
+					Entry("fails to connect to POSTGRES", "gcp_postgres", mutualTLSEnabled, useInvalidCA, useIncorrectClientCertAndKey),
+				)
+			})
+		})
+	})
+
+
+	//DescribeTable("GCP", testDBConnectionOverTLS,
+	//	Entry("allows TLS connections to MYSQL", "gcp_mysql", false, false),
+	//	Entry("does not allow TLS connections to MYSQL using invalid server CA", "gcp_mysql", false, true),
+	//	Entry("allows TLS connections to POSTGRES", "gcp_postgres", false, false),
+	//	Entry("does not allow TLS connections to POSTGRES using invalid server CA", "gcp_postgres", false, true),
+	//
+	//	Entry("allows Mutual TLS connections to MYSQL", "gcp_mysql", true, false),
+	//	Entry("allows Mutual TLS connections to POSTGRES", "gcp_postgres", true, false),
+	//)
 })
