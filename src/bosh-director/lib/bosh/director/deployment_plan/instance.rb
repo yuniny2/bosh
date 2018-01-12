@@ -162,7 +162,15 @@ module Bosh::Director
         @logger.info('Applying VM state')
 
         @current_state = spec.full_spec
+
         agent_client.apply(spec.as_apply_spec)
+
+        # todo update apply_vm_state
+        agent_state = agent_client.get_state
+        unless agent_state.nil?
+          @current_state['networks'] = agent_state['networks']
+        end
+
         @model.update(spec: @current_state)
       end
 

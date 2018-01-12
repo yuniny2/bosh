@@ -23,11 +23,15 @@ module Bosh::Director
         vm_creator,
         disk_manager,
         vm_recreator,
+        template_blob_cache,
+        dns_encoder,
         rendered_templates_persistor
       )
     end
 
-    def initialize(logger, ip_provider, blobstore, dns_state_updater, vm_deleter, vm_creator, disk_manager, vm_recreator, rendered_templates_persistor)
+    def initialize(logger, ip_provider, blobstore, dns_state_updater,
+      vm_deleter, vm_creator, disk_manager, vm_recreator,
+      template_blob_cache, dns_encoder, rendered_templates_persistor)
       @logger = logger
       @blobstore = blobstore
       @dns_state_updater = dns_state_updater
@@ -36,6 +40,8 @@ module Bosh::Director
       @disk_manager = disk_manager
       @ip_provider = ip_provider
       @vm_recreator = vm_recreator
+      @template_blob_cache = template_blob_cache
+      @dns_encoder = dns_encoder
       @rendered_templates_persistor = rendered_templates_persistor
       @current_state = {}
     end
@@ -103,8 +109,6 @@ module Bosh::Director
         end
 
         instance_plan.release_obsolete_network_plans(@ip_provider)
-
-        update_dns(instance_plan)
         @disk_manager.update_persistent_disk(instance_plan)
 
         unless recreated
@@ -113,12 +117,13 @@ module Bosh::Director
 
         cleaner = RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger)
 
-        @rendered_templates_persistor.persist(instance_plan)
-        instance.update_variable_set
-
         state_applier = InstanceUpdater::StateApplier.new(
           instance_plan,
           agent(instance),
+          @template_blob_cache,
+          @dns_encoder,
+          @dns_state_updater,
+          @rendered_templates_persistor,
           cleaner,
           @logger,
           canary: options[:canary]

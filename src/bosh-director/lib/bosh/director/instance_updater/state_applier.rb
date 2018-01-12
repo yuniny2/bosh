@@ -1,17 +1,33 @@
 module Bosh::Director
   class InstanceUpdater::StateApplier
-    def initialize(instance_plan, agent_client, rendered_job_templates_cleaner, logger, options)
+    def initialize(instance_plan, agent_client, template_blob_cache,
+dns_encoder, dns_state_updater, rendered_templates_persistor, rendered_job_templates_cleaner, logger, options)
       @instance_plan = instance_plan
       @instance = @instance_plan.instance
       @agent_client = agent_client
+      @template_blob_cache = template_blob_cache
+      @dns_encoder = dns_encoder
+      @dns_state_updater = dns_state_updater
+      @rendered_templates_persistor = rendered_templates_persistor
       @rendered_job_templates_cleaner = rendered_job_templates_cleaner
       @logger = logger
       @is_canary = options.fetch(:canary, false)
     end
 
     def apply(update_config, run_post_start = true)
-      @instance.apply_vm_state(@instance_plan.spec)
+      @logger.info('-----[dk] state-applying')
+      @rendered_templates_persistor.persist(@instance_plan) # persist existing
+      @instance.apply_vm_state(@instance_plan.spec) # fetch new ips
+      JobRenderer.render_job_instances_with_cache(
+        [@instance_plan], @template_blob_cache, @dns_encoder, @logger) # rerender
+      @rendered_templates_persistor.persist(@instance_plan) # persist
+      @instance.apply_vm_state(@instance_plan.spec) # reapply
+      @instance.update_variable_set
       @instance.update_templates(@instance_plan.templates)
+      @dns_state_updater.update_dns_for_instance(
+        @instance_plan.instance.model, @instance_plan.network_settings.dns_record_info)
+      @logger.info('-----[dk] state-applied')
+
       @rendered_job_templates_cleaner.clean
 
       if @instance.state == 'started'
