@@ -1,4 +1,5 @@
 require 'bosh/director/api/controllers/base_controller'
+require 'ruby-prof'
 
 module Bosh::Director
   module Api::Controllers
@@ -202,6 +203,8 @@ module Bosh::Director
       end
 
       get '/', authorization: :list_deployments do
+        start = Time.now
+        #RubyProf.start
         latest_cloud_configs = Models::Config.latest_set('cloud').map(&:id).sort
         deployments = @deployment_manager.all_by_name_asc
           .select { |deployment| @permission_authorizer.is_granted?(deployment, :read, token_scopes) }
@@ -232,6 +235,12 @@ module Bosh::Director
             'teams' => deployment.teams.map { |t| t.name },
           }
         end
+
+        # result = RubyProf.stop
+        # printer = RubyProf::GraphPrinter.new(result)
+        # printer.print(STDOUT)
+
+        puts Time.now - start
 
         json_encode(deployments)
       end

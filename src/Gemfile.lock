@@ -218,6 +218,7 @@ GEM
     rspec-mocks (3.0.4)
       rspec-support (~> 3.0.0)
     rspec-support (3.0.4)
+    ruby-prof (0.17.0)
     rufus-scheduler (2.0.24)
       tzinfo (>= 0.3.22)
     safe_yaml (1.0.4)
@@ -292,6 +293,7 @@ DEPENDENCIES
   rspec (~> 3.0.0)
   rspec-instafail
   rspec-its
+  ruby-prof
   sinatra
   sinatra-contrib
   sqlite3
