@@ -747,12 +747,25 @@ module Bosh::Director
             let(:content) { '' }
 
             before do
+              # view_ds = Bosh::Director::Models::Deployment
+              #   .eager(
+              #     :stemcells,
+              #     release_versions: :release,
+              #     teams: proc{|ds| ds.select(:id, :name)},
+              #     cloud_configs: proc{|ds| ds.select(:id, :type)}
+              #   )
+              #   .order_by(Sequel.asc(:name))
+              #
+              # Models::Deployment.db.create_view(:deployments_for_endpoint, view_ds)
+
+
               cloud_configs = num_cloud_configs.times.map do |i|
                 config = Models::Config.new(type: 'cloud', name: "config-name-#{i}", content: content)
                 config.before_create
                 config
               end
 
+              puts "Inserting #{num_cloud_configs} rows into configs..."
               config_ids = Models::Config.multi_insert(cloud_configs.map {|cc| cc.values}, commit_every: cloud_configs.count, return: :primary_key)
 
 
@@ -760,33 +773,41 @@ module Bosh::Director
                 Models::Deployment.new(name: "deployment-#{i}")
               end
 
-              deployment_ids = Models::Deployment.multi_insert(deployments.map {|d| d.values}, commit_every: deployments.count , return: :primary_key)
+              puts "Inserting #{num_deployments} rows into deployments..."
+              deployment_ids = Models::Deployment.multi_insert(deployments.map {|d| d.values}, commit_every: 1000 , return: :primary_key)
 
-              Models::Deployment.db[:deployments_configs].import([:deployment_id, :config_id], deployment_ids.product(config_ids), commit_every: deployment_ids.count * config_ids.count )
+              puts "Inserting #{num_cloud_configs * num_deployments} rows into deployments_configs..."
+              Models::Deployment.db[:deployments_configs].import([:deployment_id, :config_id], deployment_ids.product(config_ids), commit_every: 1000 )
 
 
               releases = num_releases.times.map do |i|
                 Models::Release.new(name: "release-#{i}")
               end
 
+              puts "Inserting #{num_releases} rows into releases..."
               release_ids = Models::Release.multi_insert(releases.map {|r| r.values}, commit_every: releases.count , return: :primary_key)
 
-              release_version_ids = release_ids.map do |r_id|
-                release_versions = num_release_versions.times.map do |i|
+              puts "Inserting #{num_release_versions * num_releases} rows into release_versions..."
+              release_versions =  release_ids.map do |r_id|
+                num_release_versions.times.map do |i|
                   Models::ReleaseVersion.new(version: "release-version-#{r_id}-#{i}", release_id: r_id)
                 end
-                Models::ReleaseVersion.multi_insert(release_versions.map {|r| r.values}, commit_every: release_versions.count , return: :primary_key)
               end
 
-              Models::Deployment.db[:deployments_release_versions].import([:release_version_id, :deployment_id], release_version_ids.flatten.product(deployment_ids), commit_every: release_version_ids.flatten.count * deployment_ids.count )
+              release_version_ids = Models::ReleaseVersion.multi_insert(release_versions.flatten.map {|r| r.values}, commit_every: 10000 , return: :primary_key)
+
+              puts "Inserting #{num_release_versions * num_releases * num_deployments} rows into deployments_release_versions..."
+              Models::Deployment.db[:deployments_release_versions].import([:release_version_id, :deployment_id], release_version_ids.product(deployment_ids), commit_every: 10000 )
 
 
               stemcells = num_stemcells.times.map do |i|
                 Models::Stemcell.new(name: "stemcell-#{i}", version: i, cid: i.to_s)
               end
 
+              puts "Inserting #{num_stemcells} rows into stemcells..."
               stemcell_ids = Models::Stemcell.multi_insert(stemcells.map {|s| s.values}, commit_every: stemcells.count , return: :primary_key)
 
+              puts "Inserting #{num_stemcells * num_deployments} into deployments_stemcells..."
               Models::Stemcell.db[:deployments_stemcells].import([:deployment_id, :stemcell_id], deployment_ids.product(stemcell_ids), commit_every: deployment_ids.count * stemcell_ids.count )
 
 
@@ -794,11 +815,64 @@ module Bosh::Director
                 Models::Team.new(name: "team-#{i}")
               end
 
+              puts "Inserting #{num_teams} rows into teams..."
               team_ids = Models::Team.multi_insert(teams.map {|t| t.values}, commit_every: teams.count , return: :primary_key)
 
+              puts "Inserting #{num_teams * num_deployments} rows into deployments_teams..."
               Models::Team.db[:deployments_teams].import([:deployment_id, :team_id], deployment_ids.product(team_ids), commit_every: deployment_ids.count * team_ids.count )
+
+              puts 'Finished inserting data...'
             end
 
+            context 'each associations with 10 and 10 deployments' do
+
+              let(:num_deployments) { 10 }
+              let(:num_cloud_configs) { 10 }
+              let(:num_releases) { 10 }
+              let(:num_release_versions) { 10 }
+              let(:num_stemcells) { 10 }
+              let(:num_teams) { 10 }
+              let(:content)  { %{---
+                          vm_types:
+                          name: custom_type((custom_text))
+                          cloud_properties:
+                          instance_type: c4.xlarge
+                          availability_zone: eu-central-1b
+                          custom_text: ((custom_text))} }
+
+
+              it 'queries the endpoint' do
+                # config = Models::Config.create(type: 'runtime', name: 'config-name', content: content)
+                # Models::Deployment.db[:deployments_configs].import([:deployment_id, :config_id], [[1, config.id]])
+                get '/', {}, {}
+
+                expect(last_response.status).to eq(200)
+              end
+            end
+
+            context 'teams, cloud_configs and deployments with 1000, releases/release_versions and stemcells 10' do
+
+              let(:num_deployments) { 1000 }
+              let(:num_cloud_configs) { 1000 }
+              let(:num_releases) { 10 }
+              let(:num_release_versions) { 10 }
+              let(:num_stemcells) { 10 }
+              let(:num_teams) { 1000 }
+              let(:content)  { %{---
+                          vm_types:
+                          name: custom_type((custom_text))
+                          cloud_properties:
+                          instance_type: c4.xlarge
+                          availability_zone: eu-central-1b
+                          custom_text: ((custom_text))} }
+
+
+              it 'queries the endpoint' do
+                get '/', {}, {}
+
+                expect(last_response.status).to eq(200)
+              end
+            end
 
             context 'each associations with 100 and 100 deployments' do
 
@@ -817,7 +891,31 @@ module Bosh::Director
                           custom_text: ((custom_text))} }
 
 
-              it 'executes the ' do
+              it 'queries the endpoint' do
+                get '/', {}, {}
+
+                expect(last_response.status).to eq(200)
+              end
+            end
+
+            context 'each associations with 100 and 1000 deployments' do
+
+              let(:num_deployments) { 1000 }
+              let(:num_cloud_configs) { 100 }
+              let(:num_releases) { 100 }
+              let(:num_release_versions) { 100 }
+              let(:num_stemcells) { 100 }
+              let(:num_teams) { 100 }
+              let(:content)  { %{---
+                          vm_types:
+                          name: custom_type((custom_text))
+                          cloud_properties:
+                          instance_type: c4.xlarge
+                          availability_zone: eu-central-1b
+                          custom_text: ((custom_text))} }
+
+
+              it 'queries the endpoint' do
                 get '/', {}, {}
 
                 expect(last_response.status).to eq(200)

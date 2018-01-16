@@ -13,9 +13,15 @@ module Bosh::Director
 
       def all_by_name_asc
         Bosh::Director::Models::Deployment
-          .eager(:teams, :stemcells, release_versions: :release, cloud_configs: proc{|ds| ds.select(:id, :type)})
+          .eager(
+            :stemcells,
+            release_versions: :release,
+            teams: proc{|ds| ds.select(:id, :name)},
+            cloud_configs: proc{|ds| ds.select(:id, :type)}
+          )
           .order_by(Sequel.asc(:name))
           .all
+        # Bosh::Director::Models::Deployment.db[:deployments_for_endpoint].all
       end
 
       def create_deployment(username, manifest_text, cloud_configs, runtime_configs, deployment, options = {}, context_id = '')

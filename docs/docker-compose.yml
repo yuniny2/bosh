@@ -21,3 +21,4 @@ services:
             - MYSQL_DB=bosh
         volumes:
             - /tmp/mysql:/var/lib/mysql
+        command: mysqld --max_allowed_packet=3000M
