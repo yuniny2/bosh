@@ -747,18 +747,6 @@ module Bosh::Director
             let(:content) { '' }
 
             before do
-              # view_ds = Bosh::Director::Models::Deployment
-              #   .eager(
-              #     :stemcells,
-              #     release_versions: :release,
-              #     teams: proc{|ds| ds.select(:id, :name)},
-              #     cloud_configs: proc{|ds| ds.select(:id, :type)}
-              #   )
-              #   .order_by(Sequel.asc(:name))
-              #
-              # Models::Deployment.db.create_view(:deployments_for_endpoint, view_ds)
-
-
               cloud_configs = num_cloud_configs.times.map do |i|
                 config = Models::Config.new(type: 'cloud', name: "config-name-#{i}", content: content)
                 config.before_create

@@ -21,7 +21,6 @@ module Bosh::Director
           )
           .order_by(Sequel.asc(:name))
           .all
-        # Bosh::Director::Models::Deployment.db[:deployments_for_endpoint].all
       end
 
       def create_deployment(username, manifest_text, cloud_configs, runtime_configs, deployment, options = {}, context_id = '')
