@@ -437,6 +437,22 @@ module Bosh::Director
             expect(status['processes']).to eq([{'name' => 'fake-process-1', 'state' => 'stopped'},
               {'name' => 'fake-process-2', 'state' => 'stopped'}])
           end
+
+          context 'when getting vm state throws RpcRemoteException' do
+            it 'returns agent state unresponsive' do
+              allow(agent).to receive(:get_state).and_raise(Bosh::Director::RpcRemoteException, 'monit get status failed')
+
+              job.perform
+              results = Models::Task.first(id: task.id).result_output.split("\n")
+
+              expect(results.length).to eq(2)
+              status_unresponsive = JSON.parse(results[0])
+              expect(status_unresponsive['job_state']).to eq('unresponsive agent')
+
+              status_stopped = JSON.parse(results[1])
+              expect(status_stopped['job_state']).to eq('stopped')
+            end
+          end
         end
 
         context 'when getting instance states' do
