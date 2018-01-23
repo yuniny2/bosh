@@ -52,6 +52,39 @@ module Bosh::Director
         assembler.bind_models
       end
 
+      context 'when get state fails' do
+
+        context 'with RpcTimeout' do
+          let(:instance_model) { instance_double(Models::Instance, job: 'job', vm_cid: 'cid', ignore: false) }
+
+          it 'reises an exception with a vm cid' do
+            agent_state_migrator = instance_double(DeploymentPlan::AgentStateMigrator)
+            allow(DeploymentPlan::AgentStateMigrator).to receive(:new).and_return(agent_state_migrator)
+            allow(agent_state_migrator).to receive(:get_state).and_raise(Bosh::Director::RpcTimeout, 'agent failed to get status')
+            allow(powerdns_manager).to receive(:migrate_legacy_records)
+
+            expect{
+              assembler.bind_models(instances: [instance_model])
+            }.to raise_error(Bosh::Director::RpcTimeout, "Get state for VM 'cid' failed. Exception is: agent failed to get status")
+          end
+        end
+
+        context 'with RpcRemoteException' do
+          let(:instance_model) { instance_double(Models::Instance, job: 'job', vm_cid: 'cid', ignore: false) }
+
+          it 'reises an exception with a vm cid' do
+            agent_state_migrator = instance_double(DeploymentPlan::AgentStateMigrator)
+            allow(DeploymentPlan::AgentStateMigrator).to receive(:new).and_return(agent_state_migrator)
+            allow(agent_state_migrator).to receive(:get_state).and_raise(Bosh::Director::RpcRemoteException, 'agent failed to get status')
+            allow(powerdns_manager).to receive(:migrate_legacy_records)
+
+            expect{
+              assembler.bind_models(instances: [instance_model])
+            }.to raise_error(Bosh::Director::RpcRemoteException, "Get state for VM 'cid' failed. Exception is: agent failed to get status")
+          end
+        end
+      end
+
       context 'overriding instances to bind' do
         let(:instance_model_to_override) { instance_double(Models::Instance, job: 'override', vm_cid: 'cid', ignore: false) }
 
