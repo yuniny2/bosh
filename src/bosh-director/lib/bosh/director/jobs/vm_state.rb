@@ -21,6 +21,7 @@ module Bosh::Director
         ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
           instances.each do |instance|
             pool.process do
+              100_000_000.times { |i| i * i }
               vm_state = process_instance(instance)
               task_result.write(vm_state.to_json + "\n")
             end
