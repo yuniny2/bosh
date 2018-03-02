@@ -126,6 +126,10 @@ module Bosh::Director
           InstanceUpdater::StateApplier.new(
             instance_plan_to_create,
             agent_client(instance_model.agent_id),
+            template_cache,
+            dns_encoder,
+            DirectorDnsStateUpdater.new(dns_encoder),
+            templates_persister,
             cleaner,
             @logger,
             {}
