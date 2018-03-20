@@ -34,17 +34,31 @@ module Bosh::Director
 
     context 'when there are vip networks' do
       let(:vip_networks) { [vip_network_1, vip_network_2] }
+
       let(:vip_network_1) do
-        DeploymentPlan::JobNetwork.new('fake-network-1', [ip_to_i('68.68.68.68'), ip_to_i('69.69.69.69')], [], vip_deployment_network_1)
+        DeploymentPlan::JobNetwork.new(
+          'fake-network-1',
+          [ip_to_i('68.68.68.68'), ip_to_i('69.69.69.69')],
+          [],
+          vip_deployment_network_1,
+        )
       end
+
       let(:vip_network_2) do
-        DeploymentPlan::JobNetwork.new('fake-network-2', [ip_to_i('77.77.77.77'),ip_to_i('79.79.79.79')], [], vip_deployment_network_2)
+        DeploymentPlan::JobNetwork.new(
+          'fake-network-2',
+          [ip_to_i('77.77.77.77'), ip_to_i('79.79.79.79')],
+          [],
+          vip_deployment_network_2,
+        )
       end
+
       let(:vip_deployment_network_1) do
-        DeploymentPlan::VipNetwork.new({'name' => 'fake-network-1'}, logger)
+        DeploymentPlan::VipNetwork.new({ 'name' => 'fake-network-1' }, logger)
       end
+
       let(:vip_deployment_network_2) do
-        DeploymentPlan::VipNetwork.new({'name' => 'fake-network-2'}, logger)
+        DeploymentPlan::VipNetwork.new({ 'name' => 'fake-network-2' }, logger)
       end
 
       it 'creates network plans with static IP from each vip network' do
@@ -59,8 +73,17 @@ module Bosh::Director
       context 'when instance already has vip networks' do
         context 'when existing instance IPs can be reused' do
           before do
-            Models::IpAddress.make(address_str: ip_to_i('69.69.69.69').to_s, network_name: 'fake-network-1', instance: instance_plan.existing_instance)
-            Models::IpAddress.make(address_str: ip_to_i('79.79.79.79').to_s, network_name: 'fake-network-2', instance: instance_plan.existing_instance)
+            Models::IpAddress.make(
+              address_str: ip_to_i('69.69.69.69').to_s,
+              network_name: 'fake-network-1',
+              instance: instance_plan.existing_instance,
+            )
+
+            Models::IpAddress.make(
+              address_str: ip_to_i('79.79.79.79').to_s,
+              network_name: 'fake-network-2',
+              instance: instance_plan.existing_instance,
+            )
           end
 
           it 'assigns vip static IP that instance is currently using' do
@@ -75,8 +98,17 @@ module Bosh::Director
 
         context 'when existing instance static IP is no longer in the list of IPs' do
           before do
-            Models::IpAddress.make(address_str: ip_to_i('65.65.65.65').to_s, network_name: 'fake-network-1', instance: instance_plan.existing_instance)
-            Models::IpAddress.make(address_str: ip_to_i('79.79.79.79').to_s, network_name: 'fake-network-2', instance: instance_plan.existing_instance)
+            Models::IpAddress.make(
+              address_str: ip_to_i('65.65.65.65').to_s,
+              network_name: 'fake-network-1',
+              instance: instance_plan.existing_instance,
+            )
+
+            Models::IpAddress.make(
+              address_str: ip_to_i('79.79.79.79').to_s,
+              network_name: 'fake-network-2',
+              instance: instance_plan.existing_instance,
+            )
           end
 
           it 'picks new IP for instance' do

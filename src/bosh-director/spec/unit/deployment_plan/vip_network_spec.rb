@@ -6,30 +6,30 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
 
   describe :initialize do
     it 'defaults cloud properties to empty hash' do
-      network = BD::DeploymentPlan::VipNetwork.new({
+      network = BD::DeploymentPlan::VipNetwork.parse({
           'name' => 'foo'
-        }, logger)
+        }, [], logger)
       expect(network.cloud_properties).to eq({})
     end
 
     it 'raises an error when cloud properties is NOT a hash' do
       expect {
-        BD::DeploymentPlan::VipNetwork.new({
+        BD::DeploymentPlan::VipNetwork.parse({
              'name' => 'foo',
              'cloud_properties' => 'not_hash'
-         }, logger)
+         }, [], logger)
       }.to raise_error(Bosh::Director::ValidationInvalidType)
     end
   end
 
   describe :network_settings do
     before(:each) do
-      @network = BD::DeploymentPlan::VipNetwork.new({
+      @network = BD::DeploymentPlan::VipNetwork.parse({
           "name" => "foo",
           "cloud_properties" => {
               "foz" => "baz"
           }
-      }, logger)
+      }, [], logger)
     end
 
     it 'should provide the VIP network settings' do

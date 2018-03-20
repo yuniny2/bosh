@@ -20,7 +20,7 @@ module Bosh
           log_outcome(instance_plans)
 
           desired_instance_plans = instance_plans.reject(&:obsolete?)
-          vip_static_ips_planner = NetworkPlanner::VipStaticIpsPlanner.new(network_planner, @logger)
+          vip_static_ips_planner = NetworkPlanner::VipStaticIpsPlanner.new(network_planner, vip_networks, instance_group.availability_zones, @logger)
           vip_static_ips_planner.add_vip_network_plans(desired_instance_plans, vip_networks)
           reconcile_network_plans(desired_instance_plans)
 
