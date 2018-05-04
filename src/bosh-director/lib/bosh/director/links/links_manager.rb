@@ -274,7 +274,7 @@ module Bosh::Director::Links
 
           properties = metadata['mapped_properties']
 
-          content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties, deployment_plan.use_short_dns_addresses?).spec.to_json
+          content = Bosh::Director::DeploymentPlan::Link.new(provider.deployment.name, instance_group, properties, deployment_plan.use_dns_addresses?, deployment_plan.use_short_dns_addresses?).spec.to_json
           provider_intent.content = content
           provider_intent.save
         end
@@ -474,22 +474,58 @@ module Bosh::Director::Links
           end
         end
       else
-        if link_use_ip_address.nil?
-          use_dns_entries = global_use_dns_entry
-        else
-          use_dns_entries = !link_use_ip_address
-        end
+        # if link_use_ip_address.nil?
+        #   use_dns_entries = global_use_dns_entry
+        # else
+        #   use_dns_entries = !link_use_ip_address
+        # end
 
         network_name = preferred_network_name || provider_intent_content_copy['default_network']
         provider_intent_content_copy['default_network'] = network_name
 
+        provider_dns_enabled = provider_intent_content_copy['use_dns_addresses']
+
         provider_intent_content_copy['instances'].each do |instance|
-          if use_dns_entries
-            desired_addresses = instance['dns_addresses']
+          # if use_dns_entries
+          #   desired_addresses = instance['dns_addresses']
+          # else
+          #   desired_addresses = instance['addresses']
+          # end
+          #
+          # raise "raise: #{instance['addresses']}, ....... #{instance['dns_addresses']}"
+
+
+          if link_use_ip_address.nil?
+            if provider_dns_enabled
+              desired_addresses = instance['dns_addresses']
+              use_dns_entries = true
+            else
+              desired_addresses = instance['addresses']
+              use_dns_entries = false
+            end
           else
-            desired_addresses = instance['addresses']
+            if link_use_ip_address
+              desired_addresses = instance['addresses']
+              use_dns_entries = false
+            else
+              desired_addresses = instance['dns_addresses']
+              use_dns_entries = true
+            end
           end
 
+          if !link_use_ip_address.nil? && link_use_ip_address
+
+          end
+
+
+          # if ( !link_use_ip_address.nil? && link_use_ip_address ) || !global_use_dns_entry
+          #   desired_addresses = instance['addresses']
+          #   use_dns_entries = false
+          # else
+          #   # Default provider behaviour (can be IP or DNS based on how provider was deployed)
+          #   desired_addresses = instance['dns_addresses']
+          #   use_dns_entries = true
+          # end
           raise Bosh::Director::LinkLookupError, "Provider link does not have network: '#{network_name}'" unless desired_addresses.key?(network_name)
 
           instance['address'] = desired_addresses[network_name]
