@@ -44,9 +44,7 @@ var _ = Describe("Director external database TLS connections", func() {
 
 		DescribeTable("Regular TLS", testDBConnectionOverTLS,
 			Entry("allows TLS connections to POSTGRES", "rds_postgres", mutualTLSEnabled, useIncorrectCA),
-
-			// Pending. Check https://www.pivotaltracker.com/story/show/154143917 and https://www.pivotaltracker.com/story/show/153785594/comments/184377346
-			PEntry("allows TLS connections to MYSQL, refer to https://www.pivotaltracker.com/story/show/154143917", "rds_mysql", false),
+			Entry("allows TLS connections to MYSQL", "rds_mysql", false, false),
 		)
 	})
 

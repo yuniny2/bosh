@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -eux
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 src_dir="${script_dir}/../../.."
@@ -49,6 +49,10 @@ export DOCKER_HOST
 apt-get update
 apt-get install -y mysql-client
 apt-get install -y postgresql-client
+apt-get install -y jq
+
+RDS_MYSQL_EXTERNAL_DB_HOST="$(jq -r .aws_mysql_endpoint database-metadata/metadata | cut -d':' -f1)"
+export RDS_MYSQL_EXTERNAL_DB_HOST
 
 cd bosh-src
 scripts/test-brats

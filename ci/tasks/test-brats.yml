@@ -11,13 +11,14 @@ inputs:
   - name: bosh-dns-release
   - name: stemcell
   - name: bosh-release
+  - name: database-metadata
 
 run:
   path: bosh-src/ci/tasks/test-brats.sh
 
 params:
   FOCUS_SPEC: ""
-  RDS_MYSQL_EXTERNAL_DB_HOST: replace-me
+  # RDS_MYSQL_EXTERNAL_DB_HOST: replace-me
   RDS_MYSQL_EXTERNAL_DB_USER: replace-me
   RDS_MYSQL_EXTERNAL_DB_PASSWORD: replace-me
   RDS_MYSQL_EXTERNAL_DB_NAME: replace-me
