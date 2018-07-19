@@ -51,7 +51,7 @@ module Bosh::Dev::Sandbox
       File.chmod(0777, executable_file_path)
     end
 
-    def start(with_trusted_certs)
+    def start(with_trusted_certs, config = nil)
       setup_config_file(with_trusted_certs)
       @config_server_process.start
 

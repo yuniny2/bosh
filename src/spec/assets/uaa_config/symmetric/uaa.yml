@@ -2,6 +2,7 @@ scim:
   users:
     - marissa|koala|marissa@test.org|Marissa|Bloggs|bosh.admin
     - non-admin|password|marissa@test.org|Marissa|Bloggs|uaa.user
+    - credhub|password|credhub|Credhub|User|credhub.read,credhub.write
   userids_enabled: true
 
 oauth:
@@ -101,6 +102,22 @@ oauth:
       scope: openid
       authorities: bosh.teams.dev_team.admin
       secret: "secret"
+    credhub_cli:
+      override: true
+      authorized-grant-types: password,refresh_token
+      # scopes the client may receive
+      scope: credhub.read,credhub.write
+      authorities: uaa.resource
+      # access-token-validity: 86400 # 1 day
+      # refresh-token-validity: 172800 # re-login required every other day
+      secret: "" # CLI expects this secret to be empty
+    credhub_client:
+      override: true
+      authorized-grant-types: client_credentials
+      secret: secret
+      scope: uaa.none
+      authorities: credhub.read,credhub.write
+      # access-token-validity: 86400 # 1 day
 jwt:
   token:
     signing-key: "uaa-secret-key"

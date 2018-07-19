@@ -1,0 +1,116 @@
+#auth_server:
+#  # Username/password: credhub/password
+#  url: <%=uaa_url%>
+#
+#security:
+#  oauth2:
+##    resource:
+##      id: credhub
+#    enabled: true
+##  basic:
+##    enabled: false
+##  authorization:
+##    acls:
+##      enabled: false
+#
+#encryption:
+#  key_creation_enabled: true
+#  providers:
+#  - provider_name: internal
+#    provider_type: internal
+#    keys:
+#    - encryption_password: opensesame
+#      provider_type: internal
+#      active: true
+#    - encryption_password: correcthorsebatterystaple
+#      provider_type: internal
+#
+#spring:
+#  jpa:
+#    hibernate:
+#      ddl-auto: validate
+#  datasource:
+#    username: pivotal
+#    # username: root
+#    # password: password
+#    # url: jdbc:mariadb://localhost:3306/credhub_dev
+#  # profiles:
+#  #   include: dev
+##  authorization:
+##    acls:
+##      # Change to true to enable ACL enforcement
+##      enabled: false
+#
+#server:
+#  port: 9000
+#  ssl:
+#    enabled: true
+#    #key_store: trust_store/key_store.jks
+#    key_password: changeit
+#    key_alias: cert
+#    ciphers: TLS_DHE_RSA_WITH_AES_128_GCM_SHA256, TLS_DHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+#    client_auth: want
+#    # trust_store: trust_store/trust_store.jks
+#    # trust_store_password: changeit
+#    trust_store_type: JKS
+#    enabled-protocols: TLSv1.2
+#
+#flyway:
+#  locations:
+#  - classpath:/db/migration/common
+#  - classpath:/db/migration/h2
+#  enabled: true
+#
+##logging:
+##  config: /var/vcap/jobs/credhub/config/log4j2.properties
+
+
+
+server:
+  port: 9000
+  ssl:
+    enabled: true
+    key_store: /Users/pivotal/workspace/bosh/src/bosh-dev/assets/sandbox/config_server/credhub/trust_store/key_store.jks
+    key_password: changeit
+    key_alias: cert
+    ciphers: TLS_DHE_RSA_WITH_AES_128_GCM_SHA256, TLS_DHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+    trust_store: /Users/pivotal/workspace/bosh/src/bosh-dev/assets/sandbox/config_server/credhub/trust_store/auth_server_trust_store.jks
+    trust_store_password: changeit
+    enabled-protocols: TLSv1.2
+security:
+  oauth2:
+    enabled: true
+  authorization:
+    acls:
+      enabled: false
+auth_server:
+  url: <%=uaa_url%>
+  trust_store: /Users/pivotal/workspace/bosh/src/bosh-dev/assets/sandbox/config_server/credhub/trust_store/trust_store.jks
+  trust_store_password: changeit
+spring:
+  jpa:
+    hibernate:
+      ddl_auto: validate
+  datasource:
+    username: pivotal
+    #password: s3lmmtju31jb8jaz4pm5
+    #url: jdbc:postgresql://127.0.0.1:5432/credhub?autoReconnect=true
+flyway:
+  locations:
+  - classpath:/db/migration/common
+  - classpath:/db/migration/h2
+  enabled: true
+encryption:
+  key_creation_enabled: true
+  providers:
+  - provider_name: internal
+    provider_type: internal
+    keys:
+    - encryption_password: opensesame
+      provider_type: internal
+      active: true
+    - encryption_password: correcthorsebatterystaple
+      provider_type: internal
+hsm: {}
+logging:
+  config: /Users/pivotal/workspace/bosh/src/bosh-dev/assets/sandbox/config_server/credhub/log4j2.properties

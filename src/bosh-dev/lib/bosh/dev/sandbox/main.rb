@@ -14,6 +14,7 @@ require 'bosh/dev/sandbox/services/director_service'
 require 'bosh/dev/sandbox/services/nginx_service'
 require 'bosh/dev/sandbox/services/uaa_service'
 require 'bosh/dev/sandbox/services/config_server_service'
+require 'bosh/dev/sandbox/services/credhub_service'
 require 'bosh/dev/gnatsd_manager'
 require 'cloud/dummy'
 require 'logging'
@@ -108,6 +109,10 @@ module Bosh::Dev::Sandbox
 
       @uaa_service = UaaService.new(@port_provider, sandbox_root, base_log_path, @logger)
       @config_server_service = ConfigServerService.new(@port_provider, base_log_path, @logger, test_env_number)
+      if ENV.fetch('CREDHUB_ENABLED', false)
+        puts "Initializing Credhub as config server"
+        @config_server_service = CredHubService.new(sandbox_root, base_log_path, @logger, test_env_number)
+      end
       @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, @uaa_service.port, @logger)
 
       @db_config = {
@@ -187,7 +192,7 @@ module Bosh::Dev::Sandbox
       end
 
       @uaa_service.start if @user_authentication == 'uaa'
-      @config_server_service.start(@with_config_server_trusted_certs) if @config_server_enabled
+      @config_server_service.start(@with_config_server_trusted_certs, director_config) if @config_server_enabled
 
       dir_config = director_config
       @director_name = dir_config.director_name
