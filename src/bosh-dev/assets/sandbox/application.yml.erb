@@ -70,12 +70,10 @@ server:
   port: 9000
   ssl:
     enabled: true
-    key_store: /Users/pivotal/workspace/bosh/src/bosh-dev/assets/sandbox/config_server/credhub/trust_store/key_store.jks
+    key_store: /Users/pivotal/workspace/bosh/src/bosh-dev/assets/sandbox/config_server/certs/key_store.jks
     key_password: changeit
     key_alias: cert
     ciphers: TLS_DHE_RSA_WITH_AES_128_GCM_SHA256, TLS_DHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-    trust_store: /Users/pivotal/workspace/bosh/src/bosh-dev/assets/sandbox/config_server/credhub/trust_store/auth_server_trust_store.jks
-    trust_store_password: changeit
     enabled-protocols: TLSv1.2
 security:
   oauth2:
@@ -85,7 +83,7 @@ security:
       enabled: false
 auth_server:
   url: <%=uaa_url%>
-  trust_store: /Users/pivotal/workspace/bosh/src/bosh-dev/assets/sandbox/config_server/credhub/trust_store/trust_store.jks
+  trust_store: /Users/pivotal/workspace/bosh/src/bosh-dev/assets/sandbox/config_server/certs/auth_server_trust_store.jks
   trust_store_password: changeit
 spring:
   jpa:

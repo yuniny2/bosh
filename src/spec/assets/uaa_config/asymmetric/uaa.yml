@@ -14,8 +14,8 @@ oauth:
       id: test
       override: true
       authorized-grant-types: client_credentials,refresh_token
-      scope: openid
-      authorities: bosh.admin,config_server.admin
+      scope: openid,credhub.read,credhub.write
+      authorities: bosh.admin,config_server.admin,credhub.read,credhub.write
       secret: "secret"
 
     hm:

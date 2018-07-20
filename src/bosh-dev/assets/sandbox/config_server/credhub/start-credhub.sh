@@ -20,8 +20,6 @@ CREDHUB_JAR_PATH=$JAR_FILE
 CREDHUB_RESOURCE_DIR=$ASSETS_DIR
 
 DB=mysql
-TRUST_STORE=${CREDHUB_RESOURCE_DIR}/trust_store
-
 
 credhub_install_dir=/tmp/crehub-release
 
@@ -46,7 +44,7 @@ java_options=(
   -Djava.io.tmpdir=$TMP_DIR
   -Djdk.tls.ephemeralDHKeySize=2048
   -Djdk.tls.namedGroups="secp384r1"
-  -Djavax.net.ssl.trustStore=trust_store/auth_server_trust_store.jks
+  -Djavax.net.ssl.trustStore=${TRUST_STORE_DIR}/auth_server_trust_store.jks
   -Djavax.net.ssl.trustStorePassword=changeit
 )
 
@@ -69,7 +67,7 @@ run_credhub() {
   echo $PWD
 
   pushd $CREDHUB_RESOURCE_DIR
-    java  ${java_options[*]-} -ea -jar credhub.jar >>/tmp/config.log 2>&1
+    exec java  ${java_options[*]-} -ea -jar credhub.jar >>/tmp/config.log 2>&1
     #java  ${java_options[*]-} -ea -jar credhub.jar
   popd
 }

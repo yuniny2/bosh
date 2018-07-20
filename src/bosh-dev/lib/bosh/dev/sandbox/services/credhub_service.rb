@@ -21,7 +21,7 @@ module Bosh::Dev::Sandbox
     CREDHUB_ASSETS_DIR = File.join(ASSETS_DIR, '/config_server/credhub')
 
     # Keys and Certs
-    CERTS_DIR = File.expand_path('trust_store', CREDHUB_ASSETS_DIR)
+    CERTS_DIR = File.join(ASSETS_DIR, 'config_server', 'certs')
     SERVER_CERT = File.join(CERTS_DIR, 'server.crt')
     SERVER_KEY = File.join(CERTS_DIR, 'server.key') # TODO: actually called server_key.pem?
     ROOT_CERT = File.join(CERTS_DIR, 'server_ca_cert.pem')
@@ -52,6 +52,7 @@ module Bosh::Dev::Sandbox
             'JAR_FILE' => jarfile_path,
             'ASSETS_DIR' => CREDHUB_ASSETS_DIR,
             'SANDBOX_ROOT' => sandbox_root,
+            'TRUST_STORE_DIR' => CERTS_DIR,
           }
         },
         @logger

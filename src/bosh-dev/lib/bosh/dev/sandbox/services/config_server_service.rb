@@ -18,14 +18,14 @@ module Bosh::Dev::Sandbox
 
     # Keys and Certs
     CERTS_DIR = File.expand_path('certs', ASSETS_DIR)
-    SERVER_CERT = File.join(CERTS_DIR, 'server.crt')
+    SERVER_CERT = File.join(CERTS_DIR, 'server.pem')
     SERVER_KEY = File.join(CERTS_DIR, 'server.key')
     NON_CA_SIGNED_CERT = File.join(CERTS_DIR, 'serverWithWrongCA.crt')
     NON_CA_SIGNED_CERT_KEY = File.join(CERTS_DIR, 'serverWithWrongCA.key')
     ROOT_CERT = File.join(CERTS_DIR, 'rootCA.pem')
     ROOT_PRIVATE_KEY = File.join(CERTS_DIR, 'rootCA.key')
     JWT_VERIFICATION_KEY = File.join(CERTS_DIR, 'jwtVerification.key')
-    UAA_CA_CERT = File.join(CERTS_DIR, 'server.crt')
+    UAA_CA_CERT = File.join(CERTS_DIR, 'server.pem')
 
     def initialize(port_provider, base_log_path, logger, test_env_number)
       @port = port_provider.get_port(:config_server_port)
