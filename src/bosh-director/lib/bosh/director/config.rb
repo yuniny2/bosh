@@ -425,6 +425,17 @@ module Bosh::Director
       def load_hash(hash)
         Config.new(hash)
       end
+
+      def audit_logger(context = 'vcap.bosh.director')
+        context ||= 'TODO'
+        log_file = "/var/vcap/sys/log/#{context}/audit.log"
+        logger = Logging::Logger.new(context)
+        logger.add_appenders(
+          Logging.appenders.file('DirectorAuditFile', filename: log_file, layout: ThreadFormatter.layout)
+        )
+        logger.level = 'debug'
+        logger
+      end
     end
 
     def name

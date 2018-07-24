@@ -4,7 +4,6 @@ module Bosh::Director
       class BaseController < Sinatra::Base
         include ApiHelper
         include Http
-        include SyslogHelper
 
         def initialize(config)
           super()
